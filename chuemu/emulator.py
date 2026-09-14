@@ -98,7 +98,7 @@ class Emulator():
         self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
         self.bell = 0#состояние звонка
         self.stop = 0#была ли программа остановлена
-        self.pause = 0
+        self.pause = 1
         #
         self.reg = [0, 0, 0, 0]#регистры
         self.flags = [0, 0, 0, 0]#флаги
@@ -123,6 +123,8 @@ class Emulator():
         self.speed = 10
         #
         self.filename = ""
+        self.compilation_console = ""
+        self.compilation_error = 0
 
     #
     #ЗАГРУЗКА/ОЧИСТКА
@@ -151,18 +153,23 @@ class Emulator():
         self.display.fill((255, 255, 255))
         self.colors = [[[0, 0] for y in range(16)] for x in range(16)]#массив цветов дисплея [red, blue]
         self.update_colors = [[0 for y in range(16)] for x in range(16)]#нужно ли перерисовывать пиксель
+        #
+        self.compilation_console = ""
+        self.compilation_error = 0
 
     def load(self):
+        self.clear()
         if self.filename != "":
-            self.clear()
             #
-            file = open(self.filename, encoding="utf-8")  # загрузка программы
+            file = open(self.filename, encoding="utf-8")#загрузка программы
             txt = file.read()
             file.close()
             res = compile(txt)
             code = res[0]
-            print(f"\ncode length: {len(code)}")
-            print(res[1])
+            self.compilation_console = f'File "{self.filename}":\n' + res[1]
+            print(self.compilation_console)
+            if res[2]:
+                self.compilation_error = 1
             for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
                 self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
                 if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
@@ -294,10 +301,14 @@ class Emulator():
     def draw(self, screen):
         self.update_display()
         #
-        if self.pause:
-            render_text("[PAUSED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
-        if self.stop:
+        if self.compilation_error:
+            render_text("[COMPILATION ERROR]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+        elif self.stop:
             render_text("[PROGRAM FINISHED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+        elif self.memory[self.index + (self.bank - 1) * 128] == 0x02:
+            render_text("[BREAKPOINT. PRESS F4]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+        elif self.pause:
+            render_text("[PAUSED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
         #
         pygame.draw.rect(screen, (0, 0, 0), ((W * 0.75 - 258 + 150, H / 2 - 258, 516, 516)))
         screen.blit(self.display, (W * 0.75 - 256 + 150, H / 2 - 256))
@@ -353,6 +364,8 @@ class Emulator():
                     self.load()
                 if event.key == pygame.K_F3:
                     one_step = 1
+                if event.key == pygame.K_F4:
+                    b = 1
                 #
                 if event.unicode in enabled_symbols:
                     self.memory[0x3E] = int.from_bytes(event.unicode.encode("cp1251"))
@@ -370,7 +383,6 @@ class Emulator():
                     self.memory[0x3E] = 0x09
                 if event.key == pygame.K_BACKSPACE:
                     self.memory[0x3E] = 0x08
-                    b = 1
         #
         #
         #

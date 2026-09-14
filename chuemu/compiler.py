@@ -497,7 +497,7 @@ def compile(code):
             param = command[2:]
     #
     if error:
-        return([], console)
+        return([], console, 1)
     #
     #ОБРАБОТКА СТРОК В DB
     #
@@ -678,7 +678,7 @@ def compile(code):
                         console += get_error(14, tk.line_ind, tk.symb_ind, code, token=token)
                         error2 = 1
     if error2:
-        return([], console)
+        return([], console, 1)
     #
     #ФИНАЛЬНОЕ ПРЕОБРАЗОВАНИЕ В БАЙТ - КОД
     #
@@ -782,8 +782,9 @@ def compile(code):
         elif command == "rnd":
             lines_level3.append(0xEC + reg_to_num[line[1].text])
     #
-    console += "File succesfully compilated"
-    return(lines_level3, console)
+    console += "File succesfully compilated\n"
+    console += f"Code length: {len(lines_level3)} bytes"
+    return(lines_level3, console, 0)
 
 text = '''
 field db 0,0,0,
