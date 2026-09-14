@@ -1,7 +1,7 @@
 from random import randint as rand
 from compiler import *
 from compiler_v2 import *
-from farmgui import *
+from utils import *
 import pygame
 pygame.init()
 

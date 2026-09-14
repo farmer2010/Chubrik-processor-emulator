@@ -1,4 +1,4 @@
-from farmgui import *
+from utils import *
 from emulator import *
 import time
 import pygame
@@ -92,7 +92,7 @@ while keep_going:
         render_text(f"bank:      {emu.bank}", (0, 140), screen, font=font12, antialias=0)
         render_text(f"display:   {emu.enable_display}", (0, 160), screen, font=font12, antialias=0)
         render_text(f"indicator: {emu.enable_indicator}", (0, 180), screen, font=font12, antialias=0)
-        render_text(f"terminal:  {emu.enable_console}", (0, 200), screen, font=font12, antialias=0) 
+        render_text(f"terminal:  {emu.enable_console}", (0, 200), screen, font=font12, antialias=0)
     #
     '''for i in range(128):
         render_text(str(i) + ":  " + str(emu.memory[i]), (300 + (i // 64) * 100, (i % 64) * 12), screen, font=small_font)#b0
