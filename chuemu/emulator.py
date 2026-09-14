@@ -1,8 +1,12 @@
 from random import randint as rand
 from compiler import *
 from compiler_v2 import *
+from farmgui import *
 import pygame
 pygame.init()
+
+W = pygame.display.Info().current_w
+H = pygame.display.Info().current_h
 
 A = 0
 B = 1
@@ -17,6 +21,9 @@ o = 3
 texture = pygame.image.load("files/fonts/font.png")
 
 sound = pygame.mixer.Sound("files/sound/Powerup5.wav")
+
+font80 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 80)
+font48 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 48)
 
 def get_symbol(ind, scale=8):
     img = pygame.Surface((6, 8))
@@ -85,10 +92,13 @@ class Emulator():
         self.memory = [0 for i in range(128 * (1 + additional_banks))]
         #память. область с 0 по 127 - общая, не является банком. Счет банков идет с 1, число 0 подключает банк 1.
         #память общая, содержит 32 кб данных. Каждый блок содержит 128 байт.
+        self.console_scale = 8
         self.console = [[font[0] for x in range(console_w)]for y in range(console_h)]#консоль
         self.console_index = 0#положение курсора консоли
         self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
         self.bell = 0#состояние звонка
+        self.stop = 0#была ли программа остановлена
+        self.pause = 0
         #
         self.reg = [0, 0, 0, 0]#регистры
         self.flags = [0, 0, 0, 0]#флаги
@@ -110,19 +120,54 @@ class Emulator():
         self.colors = [[[0, 0] for y in range(16)]for x in range(16)]#массив цветов дисплея [red, blue]
         self.update_colors = [[0 for y in range(16)]for x in range(16)]#нужно ли перерисовывать пиксель
         #
-        self.speed = 4
+        self.speed = 10
         #
-        file = open("files/programs/XO_pvp.asm", encoding="utf-8")#загрузка программы
-        txt = file.read()
-        file.close()
-        res = compile(txt)
-        code = res[0]
-        print(f"\ncode length: {len(code)}")
-        print(res[1])
-        for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
-            self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
-            if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
-                self.update_ports(i, code[i])
+        self.filename = ""
+
+    #
+    #ЗАГРУЗКА/ОЧИСТКА
+    #
+
+    def clear(self):
+        self.bank = 1
+        self.memory = [0 for i in range(128 * (1 + self.add_banks_count))]
+        self.reg = [0, 0, 0, 0]#регистры
+        self.flags = [0, 0, 0, 0]#флаги
+        self.index = 0#program counter
+        #
+        self.bell = 0#состояние звонка
+        self.stop = 0#была ли программа остановлена
+        self.enable_display = 0#0 - нет, 1 - монохромный, 2 - цветной
+        self.enable_indicator = 0#0 - нет, 1 - беззнаковый, 2 - знаковый
+        self.enable_console = 0#0 - выкл, 1 - вкл
+        #
+        self.console = [[font[0] for x in range(self.console_w)] for y in range(self.console_h)]#консоль
+        self.console_index = 0#положение курсора консоли
+        self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
+        #
+        self.indicator_b1 = 0#цифровой индикатор - байт 1(младший)
+        self.indicator_b2 = 0#байт 2(старший)
+        #
+        self.display.fill((255, 255, 255))
+        self.colors = [[[0, 0] for y in range(16)] for x in range(16)]#массив цветов дисплея [red, blue]
+        self.update_colors = [[0 for y in range(16)] for x in range(16)]#нужно ли перерисовывать пиксель
+
+    def load(self):
+        if self.filename != "":
+            self.clear()
+            #
+            file = open(self.filename, encoding="utf-8")  # загрузка программы
+            txt = file.read()
+            file.close()
+            res = compile(txt)
+            code = res[0]
+            print(f"\ncode length: {len(code)}")
+            print(res[1])
+            for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
+                self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
+                if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
+                    self.update_ports(i, code[i])
+
     #
     #ВВОД/ВЫВОД
     #
@@ -246,6 +291,43 @@ class Emulator():
     #ОБНОВЛЕНИЕ
     #
 
+    def draw(self, screen):
+        self.update_display()
+        #
+        if self.pause:
+            render_text("[PAUSED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+        if self.stop:
+            render_text("[PROGRAM FINISHED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+        #
+        pygame.draw.rect(screen, (0, 0, 0), ((W * 0.75 - 258 + 150, H / 2 - 258, 516, 516)))
+        screen.blit(self.display, (W * 0.75 - 256 + 150, H / 2 - 256))
+        indicator = self.indicator_b1 + self.indicator_b2 * 256
+        if self.enable_indicator == 2 and indicator > 32767:
+            indicator -= 65536
+        render_text(str(indicator), (W * 0.75 - 256 + 150, H / 2 + 260), screen, font=font80, color=(255, 0, 0))
+        pygame.draw.rect(screen, (0, 0, 0), (
+            W * 0.25 - self.console_w * 6 * self.console_scale / 2 - 2 + 150,
+            H / 2 - self.console_h * 8 * self.console_scale / 2 - 2,
+            self.console_w * 6 * self.console_scale + 4,
+            self.console_h * 8 * self.console_scale + 4 + 2 * self.console_scale)
+        )
+        pygame.draw.rect(screen, (255, 255, 255), (
+            W * 0.25 - self.console_w * 6 * self.console_scale / 2 + 150,
+            H / 2 + self.console_h * 8 * self.console_scale / 2,
+            self.console_w * 6 * self.console_scale,
+            2 * self.console_scale)
+        )
+        pygame.draw.rect(screen, (0, 0, 0),(
+            W * 0.25 - self.console_w * 6 * self.console_scale / 2 + self.console_index * 6 * self.console_scale + 150,
+            H / 2 + (self.console_h * 8 + 1) * self.console_scale / 2, 6 * self.console_scale, self.console_scale)
+        )
+        for x in range(self.console_w):
+            for y in range(self.console_h):
+                screen.blit(self.console[y][x], (
+                    W * 0.25 - self.console_w * 6 * self.console_scale / 2 + x * 6 * self.console_scale + 150,
+                    H / 2 - self.console_h * 8 * self.console_scale / 2 + y * 8 * self.console_scale)
+                )
+
     def update_display(self):#обновить текстуру дисплея
         for x in range(16):
             for y in range(16):
@@ -262,8 +344,16 @@ class Emulator():
 
     def update(self, events):#обработка команд
         b = 0
+        one_step = 0
         for event in events:
             if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_F1:
+                    self.pause = not self.pause
+                if event.key == pygame.K_F2:
+                    self.load()
+                if event.key == pygame.K_F3:
+                    one_step = 1
+                #
                 if event.unicode in enabled_symbols:
                     self.memory[0x3E] = int.from_bytes(event.unicode.encode("cp1251"))
                 if event.key == pygame.K_LEFT:
@@ -285,99 +375,101 @@ class Emulator():
         #
         #
         counter = 0
-        for i in range(self.speed):
-            counter += 1
-            #
-            opcode = self.read(self.index)
-            oper = self.read((self.index + 1) % 256)
-            hor = opcode & 0x0F#колонки в таблице опкодов
-            vert = (opcode & 0xF0) >> 4#строки в таблице опкодов
-            #
-            #X и Y - не X и Y из документации. X - модуль по строкам таблицы(abcd abcd abcd abcd)
-            #Y - целочисленное деление по строкам таблицы(aaaa bbbb cccc dddd)
-            X = (opcode & 0x0F) % 4
-            Y = (opcode & 0x0F) // 4
-            F = (opcode & 0x0F) % 4#необходимый флаг
-            #
-            #счетчик увеличивается в функции операции на 1 или 2 в зависимости от наличия операнда
-            if opcode == 0x00:
-                self.index = (self.index + 1) % 256
-            elif opcode == 0x01:
-                pass#stop
-            elif opcode == 0x02:
-                if b:
-                    self.index = (self.index + 1) % 256
-                    b = 0
-                    break
-            elif opcode == 0x03:
-                self.jmp(oper)
-            elif 0x04 <= opcode <= 0x07:
-                self.jmpx(self.reg[X])
-            elif 0x08 <= opcode <= 0x0B:
-                self.jf(self.flags[F], oper)
-            elif 0x0C <= opcode <= 0x0F:
-                self.jnf(self.flags[F], oper)
-            elif 0x10 <= opcode <= 0x1F:
-                self.jfx(self.flags[F], self.reg[Y])
-            elif 0x20 <= opcode <= 0x2F:
-                self.jnfx(self.flags[F], self.reg[Y])
-            elif 0x30 <= opcode <= 0x3F:
-                if hor % 5 == 0:
-                    self.st(self.reg[X], oper)
-                else:
-                    self.stx(self.reg[X], self.reg[Y])
-            elif 0x40 <= opcode <= 0x4F:
-                self.reg[X] = self.ldx(self.reg[Y])
-            elif 0x50 <= opcode <= 0x53:
-                self.reg[X] = self.ld(oper)
-            elif 0x54 <= opcode <= 0x57:
-                self.reg[X] = self.ldi(oper)
-            elif 0x60 <= opcode <= 0xDF:
-                if hor % 5 == 0:
-                    if vert == 6:
-                        self.reg[X] = self.inc(self.reg[X])
-                    elif vert == 7:
-                        self.reg[X] = self.dec(self.reg[X])
-                    elif vert == 8:
-                        self.reg[X] = self.f_not(self.reg[X])
-                    elif vert == 9:
-                        self.reg[X] = self.neg(self.reg[X])
-                    elif vert == 10:
-                        self.reg[X] = self.clr()
-                    elif vert == 11:
-                        self.test(self.reg[X])
-                    elif vert == 12:
-                        self.reg[X] = self.rcl(self.reg[X])
-                    elif vert == 13:
-                        self.reg[X] = self.rcr(self.reg[X])
-                else:
-                    if vert == 6:
-                        self.reg[X] = self.add(self.reg[X], self.reg[Y])
-                    elif vert == 7:
-                        self.reg[X] = self.sub(self.reg[X], self.reg[Y])
-                    elif vert == 8:
-                        self.reg[X] = self.adc(self.reg[X], self.reg[Y])
-                    elif vert == 9:
-                        self.reg[X] = self.sbb(self.reg[X], self.reg[Y])
-                    elif vert == 10:
-                        self.reg[X] = self.mov(self.reg[Y])
-                    elif vert == 11:
-                        self.reg[X] = self.f_and(self.reg[X], self.reg[Y])
-                    elif vert == 12:
-                        self.reg[X] = self.f_or(self.reg[X], self.reg[Y])
-                    elif vert == 13:
-                        self.reg[X] = self.f_xor(self.reg[X], self.reg[Y])
+        if not self.pause or one_step:
+            for i in range(self.speed if one_step == 0 else 1):
+                counter += 1
                 #
-            elif 0xE0 <= opcode <= 0xE3:
-                self.reg[X] = self.shl(self.reg[X])
-            elif 0xE4 <= opcode <= 0xE7:
-                self.reg[X] = self.shr(self.reg[X])
-            elif 0xE8 <= opcode <= 0xEB:
-                self.reg[X] = self.sar(self.reg[X])
-            elif 0xEC <= opcode <= 0xEF:
-                self.reg[X] = self.rnd()
-            else:
-                self.index = (self.index + 1) % 256
+                opcode = self.read(self.index)
+                oper = self.read((self.index + 1) % 256)
+                hor = opcode & 0x0F#колонки в таблице опкодов
+                vert = (opcode & 0xF0) >> 4#строки в таблице опкодов
+                #
+                #X и Y - не X и Y из документации. X - модуль по строкам таблицы(abcd abcd abcd abcd)
+                #Y - целочисленное деление по строкам таблицы(aaaa bbbb cccc dddd)
+                X = (opcode & 0x0F) % 4
+                Y = (opcode & 0x0F) // 4
+                F = (opcode & 0x0F) % 4#необходимый флаг
+                #
+                #счетчик увеличивается в функции операции на 1 или 2 в зависимости от наличия операнда
+                if opcode == 0x00:
+                    self.index = (self.index + 1) % 256
+                elif opcode == 0x01:
+                    pass#stop
+                    self.stop = 1
+                elif opcode == 0x02:
+                    if b or one_step:
+                        self.index = (self.index + 1) % 256
+                        b = 0
+                        break
+                elif opcode == 0x03:
+                    self.jmp(oper)
+                elif 0x04 <= opcode <= 0x07:
+                    self.jmpx(self.reg[X])
+                elif 0x08 <= opcode <= 0x0B:
+                    self.jf(self.flags[F], oper)
+                elif 0x0C <= opcode <= 0x0F:
+                    self.jnf(self.flags[F], oper)
+                elif 0x10 <= opcode <= 0x1F:
+                    self.jfx(self.flags[F], self.reg[Y])
+                elif 0x20 <= opcode <= 0x2F:
+                    self.jnfx(self.flags[F], self.reg[Y])
+                elif 0x30 <= opcode <= 0x3F:
+                    if hor % 5 == 0:
+                        self.st(self.reg[X], oper)
+                    else:
+                        self.stx(self.reg[X], self.reg[Y])
+                elif 0x40 <= opcode <= 0x4F:
+                    self.reg[X] = self.ldx(self.reg[Y])
+                elif 0x50 <= opcode <= 0x53:
+                    self.reg[X] = self.ld(oper)
+                elif 0x54 <= opcode <= 0x57:
+                    self.reg[X] = self.ldi(oper)
+                elif 0x60 <= opcode <= 0xDF:
+                    if hor % 5 == 0:
+                        if vert == 6:
+                            self.reg[X] = self.inc(self.reg[X])
+                        elif vert == 7:
+                            self.reg[X] = self.dec(self.reg[X])
+                        elif vert == 8:
+                            self.reg[X] = self.f_not(self.reg[X])
+                        elif vert == 9:
+                            self.reg[X] = self.neg(self.reg[X])
+                        elif vert == 10:
+                            self.reg[X] = self.clr()
+                        elif vert == 11:
+                            self.test(self.reg[X])
+                        elif vert == 12:
+                            self.reg[X] = self.rcl(self.reg[X])
+                        elif vert == 13:
+                            self.reg[X] = self.rcr(self.reg[X])
+                    else:
+                        if vert == 6:
+                            self.reg[X] = self.add(self.reg[X], self.reg[Y])
+                        elif vert == 7:
+                            self.reg[X] = self.sub(self.reg[X], self.reg[Y])
+                        elif vert == 8:
+                            self.reg[X] = self.adc(self.reg[X], self.reg[Y])
+                        elif vert == 9:
+                            self.reg[X] = self.sbb(self.reg[X], self.reg[Y])
+                        elif vert == 10:
+                            self.reg[X] = self.mov(self.reg[Y])
+                        elif vert == 11:
+                            self.reg[X] = self.f_and(self.reg[X], self.reg[Y])
+                        elif vert == 12:
+                            self.reg[X] = self.f_or(self.reg[X], self.reg[Y])
+                        elif vert == 13:
+                            self.reg[X] = self.f_xor(self.reg[X], self.reg[Y])
+                    #
+                elif 0xE0 <= opcode <= 0xE3:
+                    self.reg[X] = self.shl(self.reg[X])
+                elif 0xE4 <= opcode <= 0xE7:
+                    self.reg[X] = self.shr(self.reg[X])
+                elif 0xE8 <= opcode <= 0xEB:
+                    self.reg[X] = self.sar(self.reg[X])
+                elif 0xEC <= opcode <= 0xEF:
+                    self.reg[X] = self.rnd()
+                else:
+                    self.index = (self.index + 1) % 256
         return(counter)#возвращает количество пройденных шагов
 
     #

@@ -394,13 +394,15 @@ main_count:         ld a, bcd
 main_rnd:
 main_rnd_loop:      rnd c
                     rnd d
-                    and c, d
+                    ;and c, d
                     st c, a
                     inc a
                     dec b
                     jnz main_rnd_loop
 
                     jmp main_count
+					
+void2 db 0
 
 
 

@@ -198,6 +198,7 @@ def numbergen(tokens):
             out = number1 + number2
         elif tokens[1] == "-":
             out = number1 - number2
+        out %= 256
         return(Token(str(out), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind))
     return(None)#syntax error
 
@@ -323,17 +324,18 @@ def compile(code):
                 i == len(code) - 1:
             token_type = None
             if buffer != "":
+                #print(f'{line}, "{buffer}", "{symbol}"')
                 if buffer == "db":
                     db = 1
-                elif db and len(line) > 0 and line[-1] != "," and line[-1] != "db" and buffer != ",":
+                elif db and len(line) > 0 and line[-1] != "," and line[-1] != "db" and line[-1] != "-" and line[-1] != "+" and buffer != ",":
                     if buffer != "-" and buffer != "+":
                         line = []
                         lines_level1.append(Token("__end__", line_ind, curpos))
-                    db = 0
+                        db = 0
                 lines_level1.append(Token(buffer, line_ind, curpos))
                 line.append(Token(buffer))
                 buffer = ""
-        if len(line) > 0 and (symbol == "\n" and db == 0 or line[-1] == ":"):
+        if len(line) > 0 and db == 0 and (symbol == "\n" or line[-1] == ":"):
             line = []
             lines_level1.append(Token("__end__", line_ind, curpos))
     #
@@ -493,7 +495,6 @@ def compile(code):
         #equ params
         if len(command) >= 2 and command[1] == "equ":
             param = command[2:]
-
     #
     if error:
         return([], console)
@@ -785,12 +786,18 @@ def compile(code):
     return(lines_level3, console)
 
 text = '''
-jmp lab + ""
+field db 0,0,0,
+         0,0,0,
+         0,0,0
+
+lines db field,
+         field + 1, field + 2,
+         0, field
 '''
 
-file = open("files/programs/snake.asm", encoding="utf-8")
+file = open("files/programs/3d_maze.asm", encoding="utf-8")
 prog = file.read()
 file.close()
 
-#r = compile(text)
+#r = compile(prog)
 #print(r[1])
