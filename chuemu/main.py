@@ -23,12 +23,14 @@ up_buttons_img = pygame.Surface((W, 30))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="open", font=font16), (0, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="restart", font=font16), (150, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="show panel", font=font16), (300, 0))
-up_buttons_img.blit(get_button_image(W - 450, 30, 0, color=(180, 180, 180)), (450, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="pause", font=font16), (450, 0))
+up_buttons_img.blit(get_button_image(W - 600, 30, 0, color=(180, 180, 180)), (600, 0))
 left_buttons_img = get_button_image(300, H - 30, 0, color=(180, 180, 180))
 
 open_button_pos = 150
 restart_button_pos = 300
 show_panel_button_pos = 450
+pause_button_pos = 600
 
 prev_time = 0
 steps = 0
@@ -55,6 +57,8 @@ while keep_going:
                         emu.load()
                     elif mousepos[0] < show_panel_button_pos:
                         draw_panel = not draw_panel
+                    elif mousepos[0] < pause_button_pos:
+                        emu.pause = not emu.pause
     #
     #ОБНОВЛЕНИЕ
     #
@@ -89,24 +93,10 @@ while keep_going:
         render_text(f"        {int(emu.flags[1])}", (5, 120), screen, font=font12, antialias=0)
         render_text(f"              {int(emu.flags[2])}", (5, 120), screen, font=font12, antialias=0)
         render_text(f"                    {int(emu.flags[3])}", (5, 120), screen, font=font12, antialias=0)
-        render_text(f"bank:      {emu.bank}", (0, 140), screen, font=font12, antialias=0)
-        render_text(f"display:   {emu.enable_display}", (0, 160), screen, font=font12, antialias=0)
-        render_text(f"indicator: {emu.enable_indicator}", (0, 180), screen, font=font12, antialias=0)
-        render_text(f"terminal:  {emu.enable_console}", (0, 200), screen, font=font12, antialias=0)
-    #
-    '''for i in range(128):
-        render_text(str(i) + ":  " + str(emu.memory[i]), (300 + (i // 64) * 100, (i % 64) * 12), screen, font=small_font)#b0
-        if emu.index == i:
-            pygame.draw.circle(screen, (255, 0, 0), (280 + (i // 64) * 100 + 8, (i % 64) * 12 + 8), 5)
-        #
-        render_text(str(i + 128) + ":  " + str(emu.memory[i + 128]), (600 + (i // 64) * 100, (i % 64) * 12), screen, font=small_font)#b1
-        if emu.index == i + 128 and emu.bank == 1:
-            pygame.draw.circle(screen, (255, 0, 0), (580 + (i // 64) * 100 + 8, (i % 64) * 12 + 8), 5)
-        #
-        #render_text(str(i + 32 * 128) + ":  " + str(emu.memory[i + 32 * 128]), (900 + (i // 64) * 100, (i % 64) * 16), screen, font=font)#b32
-        #if emu.index == i + 128 and emu.bank == 32:
-        #    pygame.draw.circle(screen, (255, 0, 0), (880 + (i // 64) * 100 + 8, (i % 64) * 16 + 8), 5)'''
-    #
+        render_text(f"bank:      {emu.bank}", (5, 140), screen, font=font12, antialias=0)
+        render_text(f"display:   {emu.enable_display}", (5, 160), screen, font=font12, antialias=0)
+        render_text(f"indicator: {emu.enable_indicator}", (5, 180), screen, font=font12, antialias=0)
+        render_text(f"terminal:  {emu.enable_console}", (5, 200), screen, font=font12, antialias=0)
     steps += 1
     #
     pygame.display.update()
