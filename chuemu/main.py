@@ -58,7 +58,7 @@ while keep_going:
             keep_going = 0
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
-                show_console = 0
+                menu = "main"
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -165,7 +165,7 @@ while keep_going:
             for i in range(64):
                 ind = i * 2 + 128 * (j > 0)
                 if (emu.index == ind or emu.index == ind + 1) and (emu.bank == j or (j == 0 and ind < 128)):
-                    h = 0 if emu.index == ind else 1
+                    h = emu.index - ind
                     pygame.draw.rect(screen, (255, 160, 64), (j * 110 + 160 * (j >= 8) + 10, 14 * i + 90 - 1, 20, 14))
                     pygame.draw.rect(screen, (255, 100, 128), (j * 110 + 160 * (j >= 8) + 50 + 30 * h, 14 * i + 90 - 1, 20, 14))
                 render_text(f"{ind:02X}:", (j * 110 + 40 + 160 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
