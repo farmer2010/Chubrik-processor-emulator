@@ -682,8 +682,9 @@ def compile(code):
     #
     #ФИНАЛЬНОЕ ПРЕОБРАЗОВАНИЕ В БАЙТ - КОД
     #
-    print(change_data)
+    #print(change_data)
     lines_level3 = []
+    f = 1
     for line in lines_level2:
         command = line[0]
         if len(line) >= 2 and line[1] == "db":
@@ -691,7 +692,10 @@ def compile(code):
                 lines_level3.append(int(number.text))
         if command == ".bank":
             if int(line[1].text) != 0:
-                print(f"Bank {int(line[1].text) - 1}: {min(int(line[1].text) * 128 - len(lines_level3), 128)} bytes left")
+                if f:
+                    f = 0
+                    console += "\n"
+                console += f"Bank {int(line[1].text) - 1}: {min(int(line[1].text) * 128 - len(lines_level3), 128)} bytes left\n"
             index = int(line[1].text) * 128
             lines_level3 += [0] * (index - len(lines_level3))
         if command == "nop":
@@ -782,23 +786,8 @@ def compile(code):
         elif command == "rnd":
             lines_level3.append(0xEC + reg_to_num[line[1].text])
     #
+    if not f:
+        console += "\n"
     console += "File succesfully compilated\n"
     console += f"Code length: {len(lines_level3)} bytes"
     return(lines_level3, console, 0)
-
-text = '''
-field db 0,0,0,
-         0,0,0,
-         0,0,0
-
-lines db field,
-         field + 1, field + 2,
-         0, field
-'''
-
-file = open("files/programs/3d_maze.asm", encoding="utf-8")
-prog = file.read()
-file.close()
-
-#r = compile(prog)
-#print(r[1])

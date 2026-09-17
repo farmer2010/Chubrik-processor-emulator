@@ -169,7 +169,7 @@ class Emulator():
             res = compile(txt)
             code = res[0]
             self.compilation_console = f'File "{self.filename}":\n' + res[1]
-            print(self.compilation_console)
+            #print(self.compilation_console)
             if res[2]:
                 self.compilation_error = 1
             for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,

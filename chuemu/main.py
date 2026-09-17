@@ -72,12 +72,12 @@ while keep_going:
                     elif mousepos[0] < show_panel_button_pos:
                         draw_panel = not draw_panel
                     elif mousepos[0] < console_button_pos:
-                        if menu == "main":
+                        if menu != "console":
                             menu = "console"
                         elif menu == "console":
                             menu = "main"
                     elif mousepos[0] < memory_button_pos:
-                        if menu == "main":
+                        if menu != "memory":
                             menu = "memory"
                         elif menu == "memory":
                             menu = "main"
@@ -158,9 +158,9 @@ while keep_going:
     elif menu == "memory":
         for j in range(16):
             for i in range(64):
-                render_text(f"{i * 2 + 128 * (j > 0):02X}:", (j * 110 + 30 + 30 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
-                render_text(f"    {emu.memory[j * 128 + i * 2]:02X} {emu.memory[j * 128 + i * 2 + 1]:02X}", ((i // 64) * 90 + j * 110 + 30 * (j >= 8), 14 * i + 90), screen, font=progfont)
-            render_text(f"bank {j}", (j * 110 + 30 * (j >= 8) + 10, 1000), screen, font=progfont)
+                render_text(f"{i * 2 + 128 * (j > 0):02X}:", (j * 110 + 30 + 180 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
+                render_text(f"    {emu.memory[j * 128 + i * 2]:02X} {emu.memory[j * 128 + i * 2 + 1]:02X}", ((i // 64) * 90 + j * 110 + 180 * (j >= 8), 14 * i + 90), screen, font=progfont)
+            render_text(f"bank {j}", (j * 110 + 180 * (j >= 8) + 10, 1000), screen, font=progfont)
     steps += 1
     #
     pygame.display.update()
