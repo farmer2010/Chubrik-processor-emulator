@@ -32,6 +32,11 @@ up_buttons_img.blit(get_button_image(W - 900, 30, 0, color=(180, 180, 180)), (90
 left_buttons_img = get_button_image(300, H - 30, 0, color=(180, 180, 180))
 console_background = get_text_box_image(W - 20, H - 30, color=(180, 180, 180))
 
+bank_img = pygame.Surface((90 + 10, 896 + 10))
+bank_img.fill((255, 0, 0))
+bank_img.set_colorkey((0, 0, 0))
+pygame.draw.rect(bank_img, (0, 0, 0), (4, 4, 92, 898))
+
 open_button_pos = 150
 restart_button_pos = 300
 pause_button_pos = 450
@@ -158,9 +163,12 @@ while keep_going:
     elif menu == "memory":
         for j in range(16):
             for i in range(64):
-                render_text(f"{i * 2 + 128 * (j > 0):02X}:", (j * 110 + 30 + 180 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
-                render_text(f"    {emu.memory[j * 128 + i * 2]:02X} {emu.memory[j * 128 + i * 2 + 1]:02X}", ((i // 64) * 90 + j * 110 + 180 * (j >= 8), 14 * i + 90), screen, font=progfont)
-            render_text(f"bank {j}", (j * 110 + 180 * (j >= 8) + 10, 1000), screen, font=progfont)
+                render_text(f"{i * 2 + 128 * (j > 0):02X}:", (j * 110 + 40 + 160 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
+                render_text(f"    {emu.memory[j * 128 + i * 2]:02X} {emu.memory[j * 128 + i * 2 + 1]:02X}", ((i // 64) * 90 + j * 110 + 160 * (j >= 8) + 10, 14 * i + 90), screen, font=progfont)
+            render_text(f"bank {j}", (j * 110 + 160 * (j >= 8) + 20, 1000), screen, font=progfont)
+        #
+        b = emu.bank
+        screen.blit(bank_img, (b * 110 + 160 * (b >= 8) + 5, 84))
     steps += 1
     #
     pygame.display.update()
