@@ -98,6 +98,7 @@ class Emulator():
         self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
         self.bell = 0#состояние звонка
         self.stop = 0#была ли программа остановлена
+        self.breakpoint = 0
         self.pause = 1
         #
         self.reg = [0, 0, 0, 0]#регистры
@@ -120,7 +121,7 @@ class Emulator():
         self.colors = [[[0, 0] for y in range(16)]for x in range(16)]#массив цветов дисплея [red, blue]
         self.update_colors = [[0 for y in range(16)]for x in range(16)]#нужно ли перерисовывать пиксель
         #
-        self.speed = 10
+        self.speed = 1000
         #
         self.filename = ""
         self.compilation_console = ""
@@ -139,6 +140,7 @@ class Emulator():
         #
         self.bell = 0#состояние звонка
         self.stop = 0#была ли программа остановлена
+        self.breakpoint = 0
         self.enable_display = 0#0 - нет, 1 - монохромный, 2 - цветной
         self.enable_indicator = 0#0 - нет, 1 - беззнаковый, 2 - знаковый
         self.enable_console = 0#0 - выкл, 1 - вкл
@@ -301,15 +303,6 @@ class Emulator():
     def draw(self, screen):
         self.update_display()
         #
-        if self.compilation_error:
-            render_text("[COMPILATION ERROR]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
-        elif self.stop:
-            render_text("[PROGRAM FINISHED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
-        elif self.memory[self.index + (self.bank - 1) * 128] == 0x02:
-            render_text("[BREAKPOINT. PRESS F4]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
-        elif self.pause:
-            render_text("[PAUSED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
-        #
         pygame.draw.rect(screen, (0, 0, 0), ((W * 0.75 - 258 + 150, H / 2 - 258, 516, 516)))
         screen.blit(self.display, (W * 0.75 - 256 + 150, H / 2 - 256))
         indicator = self.indicator_b1 + self.indicator_b2 * 256
@@ -366,6 +359,7 @@ class Emulator():
                     one_step = 1
                 if event.key == pygame.K_F4:
                     b = 1
+                    self.breakpoint = 0
                 #
                 if event.unicode in enabled_symbols:
                     self.memory[0x3E] = int.from_bytes(event.unicode.encode("cp1251"))
@@ -413,6 +407,8 @@ class Emulator():
                         self.index = (self.index + 1) % 256
                         b = 0
                         break
+                    else:
+                        self.breakpoint = 1
                 elif opcode == 0x03:
                     self.jmp(oper)
                 elif 0x04 <= opcode <= 0x07:
