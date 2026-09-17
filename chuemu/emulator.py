@@ -121,7 +121,7 @@ class Emulator():
         self.colors = [[[0, 0] for y in range(16)]for x in range(16)]#массив цветов дисплея [red, blue]
         self.update_colors = [[0 for y in range(16)]for x in range(16)]#нужно ли перерисовывать пиксель
         #
-        self.speed = 1000
+        self.speed = 10
         #
         self.filename = ""
         self.compilation_console = ""

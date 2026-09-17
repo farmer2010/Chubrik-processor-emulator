@@ -163,9 +163,14 @@ while keep_going:
     elif menu == "memory":
         for j in range(16):
             for i in range(64):
-                render_text(f"{i * 2 + 128 * (j > 0):02X}:", (j * 110 + 40 + 160 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
+                ind = i * 2 + 128 * (j > 0)
+                if (emu.index == ind or emu.index == ind + 1) and (emu.bank == j or (j == 0 and ind < 128)):
+                    h = 0 if emu.index == ind else 1
+                    pygame.draw.rect(screen, (255, 160, 64), (j * 110 + 160 * (j >= 8) + 10, 14 * i + 90 - 1, 20, 14))
+                    pygame.draw.rect(screen, (255, 100, 128), (j * 110 + 160 * (j >= 8) + 50 + 30 * h, 14 * i + 90 - 1, 20, 14))
+                render_text(f"{ind:02X}:", (j * 110 + 40 + 160 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
                 render_text(f"    {emu.memory[j * 128 + i * 2]:02X} {emu.memory[j * 128 + i * 2 + 1]:02X}", ((i // 64) * 90 + j * 110 + 160 * (j >= 8) + 10, 14 * i + 90), screen, font=progfont)
-            render_text(f"bank {j}", (j * 110 + 160 * (j >= 8) + 20, 1000), screen, font=progfont)
+            render_text(f"bank {j}" if j > 0 else "common", (j * 110 + 160 * (j >= 8) + 20, 1000), screen, font=progfont)
         #
         b = emu.bank
         screen.blit(bank_img, (b * 110 + 160 * (b >= 8) + 5, 84))
