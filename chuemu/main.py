@@ -30,6 +30,9 @@ up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="sh
 up_buttons_img.blit(get_button_image(W - 900, 30, 0, color=(180, 180, 180)), (900, 0))
 
 left_buttons_img = get_button_image(300, H - 30, 0, color=(180, 180, 180))
+render_text("SPEED:", (5, 200), left_buttons_img, font=font14)
+left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 220))
+
 console_background = get_text_box_image(W - 20, H - 30, color=(180, 180, 180))
 
 bank_img = pygame.Surface((90 + 10, 896 + 10))
@@ -43,6 +46,10 @@ pause_button_pos = 450
 show_panel_button_pos = 600
 console_button_pos = 750
 memory_button_pos = 900
+
+texts = [str(emu.speed), "", ""]
+mouse_connect = 0#0 - no, 1 - speed, 2 - console w, 3 - console h
+cursor_timer = 0
 
 menu = "main"
 console_scroll = 0
@@ -59,6 +66,16 @@ while keep_going:
         if event.type == pygame.KEYDOWN:
             if event.key == pygame.K_ESCAPE:
                 menu = "main"
+            if mouse_connect != 0:
+                if event.key == pygame.K_BACKSPACE:
+                    texts[mouse_connect - 1] = texts[mouse_connect - 1][:-1]
+                    t = texts[mouse_connect - 1]
+                    emu.speed = int(t) if len(t) > 0 else 0
+                if event.unicode in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
+                    if len(texts[mouse_connect - 1]) < 12:
+                        texts[mouse_connect - 1] += event.unicode
+                        t = texts[mouse_connect - 1]
+                        emu.speed = int(t) if len(t) > 0 else 0
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -76,16 +93,19 @@ while keep_going:
                         emu.pause = not emu.pause
                     elif mousepos[0] < show_panel_button_pos:
                         draw_panel = not draw_panel
+                        mouse_connect = 0
                     elif mousepos[0] < console_button_pos:
                         if menu != "console":
                             menu = "console"
                         elif menu == "console":
                             menu = "main"
+                        mouse_connect = 0
                     elif mousepos[0] < memory_button_pos:
                         if menu != "memory":
                             menu = "memory"
                         elif menu == "memory":
                             menu = "main"
+                        mouse_connect = 0
                 #
                 if menu == "console":
                     if mousepos[1] > 30 and mousepos[0] > W - 20:
@@ -94,12 +114,18 @@ while keep_going:
                             h = min(1, (H - 40) // 20 / lenlines) * (H - 30)
                             m_y = (mousepos[1] - 30 - h/2) / (H - 30 - h)
                             console_scroll = max(0, int(lenlines * m_y))
+                elif menu == "main" and draw_panel:
+                    if mousepos[0] > 10 and mousepos[0] < 160 and mousepos[1] > 250 and mousepos[1] < 280:
+                        mouse_connect = 1
+                    else:
+                        mouse_connect = 0
     #
     #ОБНОВЛЕНИЕ
     #
+    fps = round(timer.get_fps(), 2)
     if menu == "main" or menu == "memory":
         current_time = time.time()
-        counter = emu.update(events)
+        counter = emu.update(events, fps)
         #
         if steps % 10 == 0:
             tps = counter / (current_time - prev_time)
@@ -125,26 +151,34 @@ while keep_going:
         if draw_panel:
             screen.blit(left_buttons_img, (0, 30))
         #
-        render_text(f"fps: {round(timer.get_fps(), 2)}", (5, 40), screen, font=font14, antialias=0)
-        render_text(f"tps: {round(tps, 1)}", (5, 60), screen, font=font14, antialias=0)
+        render_text(f"fps: {fps}", (5, 40), screen, font=font14)
+        render_text(f"tps: {round(tps, 1)}", (5, 60), screen, font=font14)
         if draw_panel:
-            render_text("index:   , command:", (5, 80), screen, font=font14, antialias=0)
-            render_text(f"      {emu.index}", (5, 80), screen, font=font14, antialias=0)
-            render_text(f"                   {hex(emu.read(emu.index))}", (5, 80), screen, font=font14, antialias=0)
-            render_text("A:    B:    C:    D:", (5, 100), screen, font=font14, antialias=0)
-            render_text(f"  {emu.reg[0]}", (5, 100), screen, font=font14, antialias=0)
-            render_text(f"        {emu.reg[1]}", (5, 100), screen, font=font14, antialias=0)
-            render_text(f"              {emu.reg[2]}", (5, 100), screen, font=font14, antialias=0)
-            render_text(f"                    {emu.reg[3]}", (5, 100), screen, font=font14, antialias=0)
-            render_text("Z:    S:    C:    O:", (5, 120), screen, font=font14, antialias=0)
-            render_text(f"  {int(emu.flags[0])}", (5, 120), screen, font=font14, antialias=0)
-            render_text(f"        {int(emu.flags[1])}", (5, 120), screen, font=font14, antialias=0)
-            render_text(f"              {int(emu.flags[2])}", (5, 120), screen, font=font14, antialias=0)
-            render_text(f"                    {int(emu.flags[3])}", (5, 120), screen, font=font14, antialias=0)
-            render_text(f"bank:      {emu.bank}", (5, 140), screen, font=font14, antialias=0)
-            render_text(f"display:   {emu.enable_display}", (5, 160), screen, font=font14, antialias=0)
-            render_text(f"indicator: {emu.enable_indicator}", (5, 180), screen, font=font14, antialias=0)
-            render_text(f"terminal:  {emu.enable_console}", (5, 200), screen, font=font14, antialias=0)
+            render_text("index:   , command:", (5, 80), screen, font=font14)
+            render_text(f"      {emu.index}", (5, 80), screen, font=font14)
+            render_text(f"                   {hex(emu.read(emu.index))}", (5, 80), screen, font=font14)
+            render_text("A:    B:    C:    D:", (5, 100), screen, font=font14)
+            render_text(f"  {emu.reg[0]}", (5, 100), screen, font=font14)
+            render_text(f"        {emu.reg[1]}", (5, 100), screen, font=font14)
+            render_text(f"              {emu.reg[2]}", (5, 100), screen, font=font14)
+            render_text(f"                    {emu.reg[3]}", (5, 100), screen, font=font14)
+            render_text("Z:    S:    C:    O:", (5, 120), screen, font=font14)
+            render_text(f"  {int(emu.flags[0])}", (5, 120), screen, font=font14)
+            render_text(f"        {int(emu.flags[1])}", (5, 120), screen, font=font14)
+            render_text(f"              {int(emu.flags[2])}", (5, 120), screen, font=font14)
+            render_text(f"                    {int(emu.flags[3])}", (5, 120), screen, font=font14)
+            render_text(f"bank:      {emu.bank}", (5, 140), screen, font=font14)
+            render_text(f"display:   {emu.enable_display}", (5, 160), screen, font=font14)
+            render_text(f"indicator: {emu.enable_indicator}", (5, 180), screen, font=font14)
+            render_text(f"terminal:  {emu.enable_console}", (5, 200), screen, font=font14)
+            #
+            render_text(texts[0], (20, 258), screen, font=font14)
+            if mouse_connect == 1:
+                cursor_timer += 1
+                if cursor_timer > fps:
+                    cursor_timer = 0
+                if cursor_timer < fps/2:
+                    pygame.draw.rect(screen, (0, 0, 0), (20 + 11 * len(texts[0]), 256, 2, 18))
     elif menu == "console":
         screen.blit(console_background, (0, 30))
         lines = emu.compilation_console.split("\n")

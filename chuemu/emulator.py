@@ -1,3 +1,4 @@
+import math
 from random import randint as rand
 from compiler import *
 from compiler_v2 import *
@@ -121,7 +122,8 @@ class Emulator():
         self.colors = [[[0, 0] for y in range(16)]for x in range(16)]#массив цветов дисплея [red, blue]
         self.update_colors = [[0 for y in range(16)]for x in range(16)]#нужно ли перерисовывать пиксель
         #
-        self.speed = 10
+        self.speed = 500#скорость в тиках в секунду
+        self.tick_count = 0
         #
         self.filename = ""
         self.compilation_console = ""
@@ -158,6 +160,8 @@ class Emulator():
         #
         self.compilation_console = ""
         self.compilation_error = 0
+        #
+        self.tick_count = 0
 
     def load(self):
         self.clear()
@@ -346,7 +350,7 @@ class Emulator():
                         pygame.draw.rect(self.display, (165, 64, 128), (x * 32, y * 32, 32, 32))
                     self.update_colors[x][y] = 0
 
-    def update(self, events):#обработка команд
+    def update(self, events, fps):#обработка команд
         b = 0
         one_step = 0
         for event in events:
@@ -382,8 +386,15 @@ class Emulator():
         #
         counter = 0
         if not self.pause or one_step:
-            for i in range(self.speed if one_step == 0 else 1):
+            #
+            old_ticks = self.tick_count
+            self.tick_count += self.speed / fps
+            print(self.tick_count)
+            speed = int(self.tick_count) - int(old_ticks)
+            #
+            for i in range(speed if one_step == 0 else 1):
                 counter += 1
+                self.tick_count += 1
                 #
                 opcode = self.read(self.index)
                 oper = self.read((self.index + 1) % 256)
