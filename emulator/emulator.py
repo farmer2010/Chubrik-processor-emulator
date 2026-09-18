@@ -309,31 +309,34 @@ class Emulator():
         #
         pygame.draw.rect(screen, (0, 0, 0), ((W * 0.75 - 258 + 150, H / 2 - 258, 516, 516)))
         screen.blit(self.display, (W * 0.75 - 256 + 150, H / 2 - 256))
+        #
         indicator = self.indicator_b1 + self.indicator_b2 * 256
         if self.enable_indicator == 2 and indicator > 32767:
             indicator -= 65536
         render_text(str(indicator), (W * 0.75 - 256 + 150, H / 2 + 260), screen, font=font80, color=(255, 0, 0))
+        #
+        console_pos = (300 + (W * 0.75 - 106 - 300) / 2 - self.console_w * 6 * self.console_scale / 2, H / 2 - self.console_h * 8 * self.console_scale / 2)
         pygame.draw.rect(screen, (0, 0, 0), (
-            W * 0.25 - self.console_w * 6 * self.console_scale / 2 - 2 + 150,
-            H / 2 - self.console_h * 8 * self.console_scale / 2 - 2,
+            console_pos[0] - 2,
+            console_pos[1] - 2,
             self.console_w * 6 * self.console_scale + 4,
-            self.console_h * 8 * self.console_scale + 4 + 2 * self.console_scale)
+            (self.console_h * 8 + 2) * self.console_scale + 4)
         )
         pygame.draw.rect(screen, (255, 255, 255), (
-            W * 0.25 - self.console_w * 6 * self.console_scale / 2 + 150,
-            H / 2 + self.console_h * 8 * self.console_scale / 2,
+            console_pos[0],
+            console_pos[1] + 8 * self.console_scale * self.console_h,
             self.console_w * 6 * self.console_scale,
             2 * self.console_scale)
         )
         pygame.draw.rect(screen, (0, 0, 0),(
-            W * 0.25 - self.console_w * 6 * self.console_scale / 2 + self.console_index * 6 * self.console_scale + 150,
-            H / 2 + (self.console_h * 8 + 1) * self.console_scale / 2, 6 * self.console_scale, self.console_scale)
+            console_pos[0] + self.console_index * 6 * self.console_scale,
+            console_pos[1] + 8 * self.console_scale * self.console_h, 6 * self.console_scale, self.console_scale)
         )
         for x in range(self.console_w):
             for y in range(self.console_h):
                 screen.blit(self.console[y][x], (
-                    W * 0.25 - self.console_w * 6 * self.console_scale / 2 + x * 6 * self.console_scale + 150,
-                    H / 2 - self.console_h * 8 * self.console_scale / 2 + y * 8 * self.console_scale)
+                    console_pos[0] + x * 6 * self.console_scale,
+                    console_pos[1] + y * 8 * self.console_scale)
                 )
 
     def update_display(self):#обновить текстуру дисплея
