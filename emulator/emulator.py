@@ -389,8 +389,7 @@ class Emulator():
             #
             old_ticks = self.tick_count
             self.tick_count += self.speed / fps
-            print(self.tick_count)
-            speed = int(self.tick_count) - int(old_ticks)
+            speed = min(int(self.tick_count) - int(old_ticks), 50000)
             #
             for i in range(speed if one_step == 0 else 1):
                 counter += 1
