@@ -81,14 +81,16 @@ def to_unsigned(x):
         return(x)
 
 class Emulator():
-    def __init__(self, console_w=12, console_h=4):
+    def __init__(self, console_w=162, console_h=108):
         self.console_w = console_w
         self.console_h = console_h
         self.bank = 1
         self.memory = [0 for i in range(128 * 256)]
         #память. область с 0 по 127 - общая, не является банком. Счет банков идет с 1, число 0 подключает банк 1.
         #память общая, содержит 32 кб данных. Каждый блок содержит 128 байт.
-        self.console_scale = 12
+        dw = W * 0.75 - 256 + 150 - 300 - 100
+        dh = H - 30 - 100
+        self.console_scale = max(int(min(dw / (console_w * 6), dh / (console_h * 8))), 1)
         self.font = [get_symbol(i, scale=self.console_scale) for i in range(256)]#шрифт для консоли
         self.console = [[self.font[0] for x in range(console_w)]for y in range(console_h)]#консоль
         self.console_index = 0#положение курсора консоли
