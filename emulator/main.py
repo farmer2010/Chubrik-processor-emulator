@@ -32,6 +32,10 @@ up_buttons_img.blit(get_button_image(W - 900, 30, 0, color=(180, 180, 180)), (90
 left_buttons_img = get_button_image(300, H - 30, 0, color=(180, 180, 180))
 render_text("SPEED:", (5, 200), left_buttons_img, font=font14)
 left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 220))
+render_text("CONSOLE WIDTH:", (5, 260), left_buttons_img, font=font14)
+left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 280))
+render_text("CONSOLE HEIGHT:", (5, 320), left_buttons_img, font=font14)
+left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 340))
 
 console_background = get_text_box_image(W - 20, H - 30, color=(180, 180, 180))
 
@@ -47,9 +51,10 @@ show_panel_button_pos = 600
 console_button_pos = 750
 memory_button_pos = 900
 
-texts = [str(emu.speed), "", ""]
+texts = [str(emu.speed), str(emu.console_w), str(emu.console_h)]
 mouse_connect = 0#0 - no, 1 - speed, 2 - console w, 3 - console h
 cursor_timer = 0
+change_console = 0
 
 menu = "main"
 console_scroll = 0
@@ -70,12 +75,27 @@ while keep_going:
                 if event.key == pygame.K_BACKSPACE:
                     texts[mouse_connect - 1] = texts[mouse_connect - 1][:-1]
                     t = texts[mouse_connect - 1]
-                    emu.speed = int(t) if len(t) > 0 else 0
+                    if mouse_connect == 1:
+                        emu.speed = int(t) if len(t) > 0 else 0
                 if event.unicode in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
                     if len(texts[mouse_connect - 1]) < 12:
                         texts[mouse_connect - 1] += event.unicode
                         t = texts[mouse_connect - 1]
-                        emu.speed = int(t) if len(t) > 0 else 0
+                        if mouse_connect == 1:
+                            emu.speed = int(t) if len(t) > 0 else 0
+                        elif mouse_connect == 2 or mouse_connect == 3:
+                            change_console = 1
+            if event.key == pygame.K_F2:
+                if change_console:
+                    change_console = 0
+                    w = int(texts[1]) if len(texts[1]) > 0 else 0
+                    h = int(texts[2]) if len(texts[2]) > 0 else 0
+                    emu.change_console_scale(w, h)
+                emu.load()
+            if event.key == pygame.K_F5:
+                menu = "console"
+            if event.key == pygame.K_F6:
+                menu = "memory"
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -85,9 +105,19 @@ while keep_going:
                     if mousepos[0] < open_button_pos:
                         name = crossfiledialog.open_file(start_dir="files/programs/", filter=["*.asm", "*.txt"])
                         if name != None:
+                            if change_console:
+                                change_console = 0
+                                w = int(texts[1]) if len(texts[1]) > 0 else 0
+                                h = int(texts[2]) if len(texts[2]) > 0 else 0
+                                emu.change_console_scale(w, h)
                             emu.filename = name
                             emu.load()
                     elif mousepos[0] < restart_button_pos:
+                        if change_console:
+                            change_console = 0
+                            w = int(texts[1]) if len(texts[1]) > 0 else 0
+                            h = int(texts[2]) if len(texts[2]) > 0 else 0
+                            emu.change_console_scale(w, h)
                         emu.load()
                     elif mousepos[0] < pause_button_pos:
                         emu.pause = not emu.pause
@@ -115,8 +145,15 @@ while keep_going:
                             m_y = (mousepos[1] - 30 - h/2) / (H - 30 - h)
                             console_scroll = max(0, int(lenlines * m_y))
                 elif menu == "main" and draw_panel:
-                    if mousepos[0] > 10 and mousepos[0] < 160 and mousepos[1] > 250 and mousepos[1] < 280:
-                        mouse_connect = 1
+                    if mousepos[0] > 10 and mousepos[0] < 160:
+                        if mousepos[1] > 250 and mousepos[1] < 280:
+                            mouse_connect = 1
+                        elif mousepos[1] > 310 and mousepos[1] < 340:
+                            mouse_connect = 2
+                        elif mousepos[1] > 370 and mousepos[1] < 400:
+                            mouse_connect = 3
+                        else:
+                            mouse_connect = 0
                     else:
                         mouse_connect = 0
     #
@@ -172,13 +209,14 @@ while keep_going:
             render_text(f"indicator: {emu.enable_indicator}", (5, 180), screen, font=font14)
             render_text(f"terminal:  {emu.enable_console}", (5, 200), screen, font=font14)
             #
-            render_text(texts[0], (20, 258), screen, font=font14)
-            if mouse_connect == 1:
+            for i in range(3):
+                render_text(texts[i], (20, 258 + 60 * i), screen, font=font14)
+            if mouse_connect > 0:
                 cursor_timer += 1
                 if cursor_timer > fps:
                     cursor_timer = 0
                 if cursor_timer < fps/2:
-                    pygame.draw.rect(screen, (0, 0, 0), (20 + 11 * len(texts[0]), 256, 2, 18))
+                    pygame.draw.rect(screen, (0, 0, 0), (20 + 11 * len(texts[mouse_connect - 1]), 256 + 60 * (mouse_connect - 1), 2, 18))
     elif menu == "console":
         screen.blit(console_background, (0, 30))
         lines = emu.compilation_console.split("\n")

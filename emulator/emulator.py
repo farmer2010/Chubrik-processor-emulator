@@ -81,7 +81,7 @@ def to_unsigned(x):
         return(x)
 
 class Emulator():
-    def __init__(self, console_w=162, console_h=108):
+    def __init__(self, console_w=12, console_h=4):
         self.console_w = console_w
         self.console_h = console_h
         self.bank = 1
@@ -178,6 +178,14 @@ class Emulator():
                 self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
                 if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
                     self.update_ports(i, code[i])
+
+    def change_console_scale(self, w, h):
+        self.console_w = w
+        self.console_h = h
+        dw = W * 0.75 - 256 + 150 - 300 - 100
+        dh = H - 30 - 100
+        self.console_scale = max(int(min(dw / (self.console_w * 6), dh / (self.console_h * 8))), 1)
+        self.font = [get_symbol(i, scale=self.console_scale) for i in range(256)]  # шрифт для консоли
 
     #
     #ВВОД/ВЫВОД
@@ -358,8 +366,6 @@ class Emulator():
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F1:
                     self.pause = not self.pause
-                if event.key == pygame.K_F2:
-                    self.load()
                 if event.key == pygame.K_F3:
                     one_step = 1
                 if event.key == pygame.K_F4:
