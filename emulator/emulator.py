@@ -1,7 +1,6 @@
 import math
 from random import randint as rand
 from compiler import *
-from compiler_v2 import *
 from utils import *
 import pygame
 pygame.init()
@@ -44,9 +43,6 @@ def generate_symbol(data, scale=8):
     img = pygame.transform.scale(img, (6 * scale, 8 * scale))
     return (img)
 
-
-font = [get_symbol(i) for i in range(256)]#шрифт для консоли
-
 enabled_symbols = [
     "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
     "+", "-", "*", "/", "=", "_", "(", ")", "[", "]", "{", "}", "!", "@", "#", "$", "%", "^", "&", "`", "~", "№", ";", "?", ":", ".", ",", "'", '"', "\\", "<", ">", "|",
@@ -85,16 +81,16 @@ def to_unsigned(x):
         return(x)
 
 class Emulator():
-    def __init__(self, additional_banks=255, console_w=12, console_h=4):
+    def __init__(self, console_w=12, console_h=4):
         self.console_w = console_w
         self.console_h = console_h
-        self.add_banks_count = additional_banks
         self.bank = 1
-        self.memory = [0 for i in range(128 * (1 + additional_banks))]
+        self.memory = [0 for i in range(128 * 256)]
         #память. область с 0 по 127 - общая, не является банком. Счет банков идет с 1, число 0 подключает банк 1.
         #память общая, содержит 32 кб данных. Каждый блок содержит 128 байт.
-        self.console_scale = 8
-        self.console = [[font[0] for x in range(console_w)]for y in range(console_h)]#консоль
+        self.console_scale = 12
+        self.font = [get_symbol(i, scale=self.console_scale) for i in range(256)]#шрифт для консоли
+        self.console = [[self.font[0] for x in range(console_w)]for y in range(console_h)]#консоль
         self.console_index = 0#положение курсора консоли
         self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
         self.bell = 0#состояние звонка
@@ -135,7 +131,7 @@ class Emulator():
 
     def clear(self):
         self.bank = 1
-        self.memory = [0 for i in range(128 * (1 + self.add_banks_count))]
+        self.memory = [0 for i in range(128 * 256)]
         self.reg = [0, 0, 0, 0]#регистры
         self.flags = [0, 0, 0, 0]#флаги
         self.index = 0#program counter
@@ -147,7 +143,7 @@ class Emulator():
         self.enable_indicator = 0#0 - нет, 1 - беззнаковый, 2 - знаковый
         self.enable_console = 0#0 - выкл, 1 - вкл
         #
-        self.console = [[font[0] for x in range(self.console_w)] for y in range(self.console_h)]#консоль
+        self.console = [[self.font[0] for x in range(self.console_w)] for y in range(self.console_h)]#консоль
         self.console_index = 0#положение курсора консоли
         self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
         #
@@ -231,7 +227,7 @@ class Emulator():
         elif ind == 0x3C and self.enable_console:
             self.bell = not self.bell
             if value >= 32 and value != 0x98:
-                self.console[-1][self.console_index] = font[value]
+                self.console[-1][self.console_index] = self.font[value]
                 #
                 if value != 127:
                     self.console_index += 1
@@ -239,25 +235,25 @@ class Emulator():
                     if self.console_index == self.console_w:
                         self.console_index = 0
                         self.console = self.console[1:]
-                        self.console.append([font[0] for i in range(self.console_w)])
+                        self.console.append([self.font[0] for i in range(self.console_w)])
             elif value == 0x07:
                 if self.bell == 1:
                     sound.play()
             elif value == 0x08:
                 if self.console_index > 0:
                     self.console_index -= 1
-                    self.console[-1][self.console_index] = font[0]
+                    self.console[-1][self.console_index] = self.font[0]
             elif value == 0x09:
                 self.console_index = min(self.console_w - 1, (self.console_index + 4) // 4 * 4)
             elif value == 0x0A:
                 self.console_index = 0
                 self.console = self.console[1:]
-                self.console.append([font[0] for i in range(self.console_w)])
+                self.console.append([self.font[0] for i in range(self.console_w)])
             elif value == 0x0D:
                 self.console_index = 0
             elif value == 0x0C:
                 self.console_index = 0
-                self.console = [[font[0] for x in range(self.console_w)] for y in range(self.console_h)]  # консоль
+                self.console = [[self.font[0] for x in range(self.console_w)] for y in range(self.console_h)]  # консоль
             elif value == 0x11:
                 self.console_index = max(0, self.console_index - 1)
             elif value == 0x13:
@@ -266,13 +262,13 @@ class Emulator():
             self.console_buffer.append(value)
             if len(self.console_buffer) == 6:
                 if self.enable_console:
-                    self.console[-1][self.console_index] = generate_symbol(self.console_buffer)
+                    self.console[-1][self.console_index] = generate_symbol(self.console_buffer, scale=self.console_scale)
                     self.console_index += 1
                     #
                     if self.console_index == self.console_w:
                         self.console_index = 0
                         self.console = self.console[1:]
-                        self.console.append([font[0] for i in range(self.console_w)])
+                        self.console.append([self.font[0] for i in range(self.console_w)])
                 #
                 self.console_buffer = []
         elif 0x40 <= ind <= 0x7F:

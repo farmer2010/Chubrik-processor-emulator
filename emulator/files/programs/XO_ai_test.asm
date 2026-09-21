@@ -24,7 +24,7 @@ jnz clear
 
 jmp start
 
-void db 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0
+void db 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0
 
 ;###############################################################
 change_bank:;переход между банками. c - индекс банка, d - индекс перехода
@@ -39,6 +39,10 @@ fn_output_index db 0,0
 field db 0,0,0,;1 - X, 10 - O
 		 0,0,0,
 		 0,0,0
+		 
+addr_to_coord db 0b0000, 0b0100, 0b1000,
+				 0b0001, 0b0101, 0b1001,
+				 0b0010, 0b0110, 0b1010
 
 indicator1 db 0;0x3A
 indicator2 db 0;0x3B
@@ -191,10 +195,7 @@ lines db field,   field+1, field+2,
 		 field+2, field+5, field+8,
 		 field,   field+4, field+8,
 		 field+2, field+4, field+6
-		 
-addr_to_coord db 0b0000, 0b0100, 0b1000,
-				 0b0001, 0b0101, 0b1001,
-				 0b0010, 0b0110, 0b1010
+
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 3                            W
