@@ -9,14 +9,14 @@ KEY_SPACE equ 0x20
 
 BANK_MAIN equ 1
 BANK_LOGIC equ 2
-BANK_IMAGE equ 3
+BANK_WIN equ 3
 BANK_DRAW equ 4
 
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                       ОБЩАЯ ОБЛАСТЬ                         W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
-;.bank 0
+.bank 0
 
 
 ldi a, display
@@ -31,7 +31,7 @@ jnz clear
 
 jmp start
 
-void db 0,0,0,0,0
+void db 0,0,0,0,0,0,0,0,0,0, 0,0
 
 ;###############################################################
 change_bank:;переход между банками. c - индекс банка, d - индекс перехода
@@ -39,27 +39,26 @@ st c, bank
 jmp d
 ;###############################################################
 
-tie_text db "   A tie\n"
-tie_text_len equ $ - tie_text
-
 buffer db 0,0,0,0
 
+rotate_position db 255,;left
+				   255,;up
+				   1,  ;right
+				   1   ;down
+
 color db 0b00000001;01 - red, 10 - blue, 11 - magenta
-render_buffer db 0b11111100, 0b00000000,
-				 0b10000100, 0b00000000,
-				 0b10000100, 0b00000000,
-				 0b10000100, 0b00000000,
-				 0b10000100, 0b00000000,
-				 0b11111100, 0b00000000
+render_buffer db 0b00000000, 0b00000000,
+				 0b00000000, 0b00000000,
+				 0b00000000, 0b00000000,
+				 0b00000000, 0b00000000,
+				 0b00000000, 0b00000000,
+				 0b00000000, 0b00000000
 
 player db 0
 
 field db 0,0,0,;1 - X, 10 - O
 		 0,0,0,
 		 0,0,0
-		 
-draw_x db 1
-draw_y db 1
 
 select_x db 1
 select_y db 1
@@ -109,80 +108,17 @@ display_blue db     0b00000000, 0b00000000,
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 1                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
-;.bank 1
-start:
-ld a, select_x
-ld b, select_y
-jmp start_draw
+.bank 1
 
 cycle:
+;ld c, player
+;jnz step
 
 ld c, connect
-ld a, select_x
-ld b, select_y
-
-
-ldi d, KEY_UP
-sub d, c
-jnz up_else
-	dec b
-	jns move_selection
-up_else:
-
-ldi d, KEY_RIGHT
-sub d, c
-jnz right_else
-	inc a
-	ldi d, 3
-	sub d, a
-	jnz move_selection
-right_else:
-
-ldi d, KEY_DOWN
-sub d, c
-jnz down_else
-	inc b
-	ldi d, 3
-	sub d, b
-	jnz move_selection
-down_else:
-
-ldi d, KEY_LEFT
-sub d, c
-jnz left_else
-	dec a
-	jns move_selection
-left_else:
-
 
 ldi d, KEY_SPACE
 sub d, c
-jz step
-jmp cycle
-
-move_selection:
-st a, buffer + 1
-st b, buffer + 2
-ld a, select_x
-ld b, select_y
-
-ldi c, BANK_IMAGE
-ldi d, clear_selection
-jmp change_bank
-clear_sel_end:
-
-ld a, buffer + 1
-ld b, buffer + 2
-st a, select_x
-st b, select_y
-
-start_draw:
-ldi c, BANK_IMAGE
-ldi d, draw_selection
-jmp change_bank
-draw_sel_end:
-jmp cycle
-
+jnz move_selection
 
 step:
 ldi c, BANK_LOGIC
@@ -192,45 +128,92 @@ set_end:
 
 ld c, player
 test c
-jz set_x
+jz draw_X
 
-set_o:
-
-ldi c, BANK_IMAGE
-ldi d, draw_O
+draw_O:
+ldi a, 0b00000010
+st a, color
+ldi a, O
+ldi b, draw_end
+ldi c, BANK_DRAW
+ldi d, draw
 jmp change_bank
 
-set_x:
-
-ldi c, BANK_IMAGE
-ldi d, draw_X
+draw_X:
+ldi a, 0b00000001
+st a, color
+ldi a, X
+ldi b, draw_end
+ldi c, BANK_DRAW
+ldi d, draw
 jmp change_bank
 
-draw_x_end:
-draw_o_end:
+draw_end:
 
 ld c, player
 not c
 st c, player
 
-
-ldi c, BANK_LOGIC
+ldi c, BANK_WIN
 ldi d, test_win
 jmp change_bank
-
 
 skip_set:
 jmp cycle
 
-void1 db 0,0,0,0,0
+move_selection:
+ldi d, 0x11
+sub c, d
+
+ldi d, 3
+sub d, c
+jc cycle
+
+ldi a, select_x
+ldi d, 0b00000001
+and d, c
+add a, d
+ld b, a
+
+ldi d, rotate_position
+add c, d
+
+ld d, c
+add b, d
+js cycle
+ldi d, 3
+sub d, b
+jz cycle
+
+st a, buffer + 1
+st b, buffer + 2
+ldi b, $ + 4
+jmp draw_selection
+
+ld a, buffer + 1
+ld b, buffer + 2
+st b, a
+
+start:
+ldi b, cycle
+
+draw_selection:
+ldi a, 0b00000011
+st a, color
+ldi a, selection
+ldi c, BANK_DRAW
+ldi d, draw
+jmp change_bank
+
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 2                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
-;.bank 2
-
+.bank 2
 
 set_test:
+ld a, select_x
+ld b, select_y
 mov c, b
 shl c
 add c, b
@@ -266,6 +249,11 @@ not_free:
 ldi d, skip_set
 jmp set_return
 
+;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+;W                           БАНК 3                            W
+;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+;проверка победы и ничьи, вывод сообщений
+.bank 3
 
 test_win:
 
@@ -300,143 +288,6 @@ dec c
 jnz line_test_cycle
 
 
-ldi c, BANK_IMAGE
-ldi d, test_tie
-jmp change_bank
-
-red_win:
-ldi c, BANK_DRAW
-ldi d, red_win_display
-jmp change_bank
-
-blue_win:
-ldi a, blue_win_text
-ldi b, blue_len
-text_cycle:
-ld c, a
-st c, terminal_input
-
-inc a
-dec b
-jnz text_cycle
-
-hlt
-
-blue_win_text db "  Blue win!\n"
-blue_len equ $ - blue_win_text
-
-lines db field,   field+1, field+2,
-		 field+3, field+4, field+5,
-		 field+6, field+7, field+8,
-		 field,   field+3, field+6,
-		 field+1, field+4, field+7,
-		 field+2, field+5, field+8,
-		 field,   field+4, field+8,
-		 field+2, field+4, field+6
-		 
-void2 db 0,0,0,0,0,0,0
-
-;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
-;W                           БАНК 3                            W
-;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
-;.bank 3
-
-draw_img:;c - адрес изображения
-st d, fn_output_index
-ldi a, 6
-ldi b, render_buffer
-load_image_cycle:
-
-ld d, c
-st d, b
-
-inc c
-inc b
-inc b
-dec a
-jnz load_image_cycle
-
-
-ldi c, BANK_DRAW
-ldi d, draw
-jmp change_bank
-
-
-draw_X:;a, b - coordinates
-
-st a, draw_x
-st b, draw_y
-
-ldi a, 0b00000001
-st a, color
-
-ldi c, X
-ldi d, draw_x_end
-jmp draw_img
-
-
-draw_O:
-
-st a, draw_x
-st b, draw_y
-
-ldi a, 0b00000010
-st a, color
-
-ldi c, O
-ldi d, draw_o_end
-jmp draw_img
-
-
-draw_selection:
-
-st a, draw_x
-st b, draw_y
-
-ldi a, 0b00000011
-st a, color
-
-ldi c, selection
-ldi d, draw_sel_end
-jmp draw_img
-
-
-clear_selection:
-
-st a, draw_x
-st b, draw_y
-
-ldi a, 0b00000011
-st a, color
-
-ldi c, selection
-ldi d, clear_sel_end
-jmp draw_img
-
-
-X db		 0b00000000,
-			 0b01001000,
-			 0b00110000,
-			 0b00110000,
-			 0b01001000,
-			 0b00000000
-
-O db		 0b00000000,
-			 0b00110000,
-			 0b01001000,
-			 0b01001000,
-			 0b00110000,
-			 0b00000000
-
-selection db 0b11111100,
-			 0b10000100,
-			 0b10000100,
-			 0b10000100,
-			 0b10000100,
-			 0b11111100
-			 
-test_tie:
-
 ldi a, field
 ldi b, 9
 test_tie_cycle:
@@ -449,16 +300,25 @@ inc a
 dec b
 jnz test_tie_cycle
 
+
+tie:
 ldi a, tie_text
 ldi b, tie_text_len
-tie_text_cycle:
-
+jmp text_cycle
+red_win:
+ldi a, red_text
+ldi b, red_text_len
+jmp text_cycle
+blue_win:
+ldi a, blue_text
+ldi b, blue_text_len
+text_cycle:
 ld c, a
 st c, terminal_input
 
 inc a
 dec b
-jnz tie_text_cycle
+jnz text_cycle
 
 hlt
 
@@ -467,30 +327,61 @@ ldi c, BANK_MAIN
 ldi d, skip_set
 jmp change_bank
 
-void3 db 0,0,0,0
+
+blue_text db "  Blue win!\n"
+blue_text_len equ $ - blue_text
+
+red_text db "  Red win!\n"
+red_text_len equ $ - red_text
+
+tie_text db "\t\bA tie\n"
+tie_text_len equ $ - tie_text
+
+lines db field,   field+1, field+2,
+		 field+3, field+4, field+5,
+		 field+6, field+7, field+8,
+		 field,   field+3, field+6,
+		 field+1, field+4, field+7,
+		 field+2, field+5, field+8,
+		 field,   field+4, field+8,
+		 field+2, field+4, field+6
+
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 4                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;рисование
-;.bank 4
+.bank 4
 
-draw:
+draw:;а - адрес изображения, b - адрес возврата
 
-ldi a, 6
-ldi b, render_buffer + 1
-clr c
-clear_render_buffer:
+st b, fn_output_index
+ldi c, 6
+ldi d, render_buffer
+load_image_cycle:
 
-st c, b
+ld b, a
+st b, d
 
-inc b
-inc b
+ldi b, 4
+sub b, c
+jz dec_end
+jnc dec_a
+inc a
+jmp dec_end
+dec_a:
 dec a
-jnz clear_render_buffer
+dec_end:
+
+inc d
+clr b
+st b, d
+inc d
+dec c
+jnz load_image_cycle
 
 
-ld a, draw_x
+ld a, select_x
 mov b, a
 shl b
 shl b
@@ -527,7 +418,7 @@ jnz for_bytes
 skip_shift:
 
 ldi c, display
-ld b, draw_y
+ld b, select_y
 mov a, b
 shl a
 shl a
@@ -581,24 +472,16 @@ ld d, fn_output_index
 jmp change_bank
 
 
+X db		 0b00000000,
+			 0b01001000,
+			 0b00110000
 
-red_win_display:
-ldi a, red_win_text
-ldi b, red_len
-red_text_cycle:
-ld c, a
-st c, terminal_input
+O db		 0b00000000,
+			 0b00110000,
+			 0b01001000
 
-inc a
-dec b
-jnz red_text_cycle
+selection db 0b11111100,
+			 0b10000100,
+			 0b10000100
 
-hlt
-
-
-red_win_text db "  Red win!\n"
-red_len equ $ - red_win_text
-
-void4 db 0,0
-
-;.bank 5
+.bank 5

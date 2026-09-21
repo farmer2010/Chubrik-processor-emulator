@@ -230,7 +230,7 @@ class Emulator():
             self.enable_console = value % 2#подключение консоли
         elif ind == 0x3C and self.enable_console:
             self.bell = not self.bell
-            if value >= 32:
+            if value >= 32 and value != 0x98:
                 self.console[-1][self.console_index] = font[value]
                 #
                 if value != 127:

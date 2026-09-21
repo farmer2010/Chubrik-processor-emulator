@@ -36,9 +36,9 @@ buffer db 0,0,0,0
 
 fn_output_index db 0,0
 
-field db 10,0,10,;1 - X, 10 - O
+field db 0,0,0,;1 - X, 10 - O
 		 0,0,0,
-		 10,0,0
+		 0,0,0
 
 indicator1 db 0;0x3A
 indicator2 db 0;0x3B
@@ -88,12 +88,10 @@ display_blue db     0b00000000, 0b00000000,
 .bank 1
 start:
 
-ldi a, lines
-ldi b, 20
-ldi d, $ + 10
-st d, fn_output_index
+ldi a, 20
+ldi b, $ + 8
 ldi c, BANK_LINE
-ldi d, test_line
+ldi d, test_lines
 jmp change_bank
 
 hlt
@@ -103,8 +101,19 @@ hlt
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 .bank 2
 
-test_line:;a - line index, b - control sum, d - output
+test_lines:;a - control sum, b - output
+st a, buffer
+st b, fn_output_index
 
+ldi a, 7
+st a, buffer + 1
+
+ldi a, lines + 21
+
+test_lines_cycle:
+
+;###############################################################
+;a - line index
 ld d, a;cell #1
 ld c, d
 
@@ -118,8 +127,9 @@ ld d, a;cell #3
 ld d, d
 add c, d
 
+ld b, buffer
 sub b, c
-jnz return
+jnz continue
 
 
 dec a
@@ -142,40 +152,36 @@ ldi a, field
 sub c, a
 ldi a, addr_to_coord
 add c, a
-ld c, c
+ld a, c
 
 ldi b, 0b0011;b - ypos
-and b, c
-ldi a, 0b1100;a - xpos
-and a, c
+and b, a
+shr a;a - xpos
 shr a
-shr a
-jmp test_line_output
+jmp test_lines_find
 
 
-return:
-clr a
+continue:
+;###############################################################
+
+ld a, buffer + 1
 dec a
-test_line_output:
-;ldi c, BANK_MAIN
-ld d, fn_output_index
-;jmp change_bank
-jmp d
-
-
-test_O_lines:
-ldi a, 8
-st a, buffer
-ldi a, lines
+js test_lines_output
 st a, buffer + 1
 
-test_O_lines_cycle:
+mov b, a
+shl a
+add a, b
+ldi b, lines
+add a, b
+jmp test_lines_cycle
 
-ld a, buffer
-dec a
-st a, buffer
-jnz test_O_lines_cycle
-
+test_lines_output:
+ldi a, 255
+test_lines_find:
+ldi c, BANK_MAIN
+ld d, fn_output_index
+jmp change_bank
 
 lines db field,   field+1, field+2,
 		 field+3, field+4, field+5,
