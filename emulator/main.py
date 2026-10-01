@@ -93,9 +93,17 @@ while keep_going:
                     emu.change_console_scale(w, h)
                 emu.load()
             if event.key == pygame.K_F5:
-                menu = "console"
+                if menu != "console":
+                    menu = "console"
+                elif menu == "console":
+                    menu = "main"
+                mouse_connect = 0
             if event.key == pygame.K_F6:
-                menu = "memory"
+                if menu != "memory":
+                    menu = "memory"
+                elif menu == "memory":
+                    menu = "main"
+                mouse_connect = 0
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:

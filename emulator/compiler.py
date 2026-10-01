@@ -453,7 +453,7 @@ def compile(code):
                         param_type[j] = "p"
             #
             for j in range(2):
-                # incorrect param syntax
+                #incorrect param syntax
                 if ((param_type[j] == "r" and (len(param[j]) != 1 or param[j][0].type != "register")) or
                         (param_type[j] == "p" and not (
                                 (len(param[j]) == 1 and is_number(param[j][0])) or
@@ -683,6 +683,7 @@ def compile(code):
     #ФИНАЛЬНОЕ ПРЕОБРАЗОВАНИЕ В БАЙТ - КОД
     #
     #print(change_data)
+    print(lines_level2)
     lines_level3 = []
     f = 1
     for line in lines_level2:
@@ -786,8 +787,14 @@ def compile(code):
         elif command == "rnd":
             lines_level3.append(0xEC + reg_to_num[line[1].text])
     #
-    if not f:
-        console += "\n"
+    console += "\n"
     console += "File succesfully compilated\n"
     console += f"Code length: {len(lines_level3)} bytes"
     return(lines_level3, console, 0)
+
+code = '''
+label db C, 0, 0
+'''
+
+res = compile(code)
+print(res[1])
