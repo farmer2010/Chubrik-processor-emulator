@@ -95,6 +95,8 @@ class Emulator():
         self.console = [[self.font[0] for x in range(console_w)]for y in range(console_h)]#консоль
         self.console_index = 0#положение курсора консоли
         self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
+        self.toggle_keys = 1
+        self.toggle_key = 0
         self.bell = 0#состояние звонка
         self.stop = 0#была ли программа остановлена
         self.breakpoint = 0
@@ -362,6 +364,8 @@ class Emulator():
     def update(self, events, fps):#обработка команд
         b = 0
         one_step = 0
+        key = 0
+        keyup = 0
         for event in events:
             if event.type == pygame.KEYDOWN:
                 if event.key == pygame.K_F1:
@@ -373,21 +377,49 @@ class Emulator():
                     self.breakpoint = 0
                 #
                 if event.unicode in enabled_symbols:
-                    self.memory[0x3E] = int.from_bytes(event.unicode.encode("cp1251"))
+                    key = int.from_bytes(event.unicode.encode("cp1251"))
                 if event.key == pygame.K_LEFT:
-                    self.memory[0x3E] = 0x11
+                    key = 0x11
                 elif event.key == pygame.K_UP:
-                    self.memory[0x3E] = 0x12
+                    key = 0x12
                 elif event.key == pygame.K_RIGHT:
-                    self.memory[0x3E] = 0x13
+                    key = 0x13
                 elif event.key == pygame.K_DOWN:
-                    self.memory[0x3E] = 0x14
+                    key = 0x14
                 elif event.key == pygame.K_RETURN:
-                    self.memory[0x3E] = 0x0A
+                    key = 0x0A
                 elif event.key == pygame.K_TAB:
-                    self.memory[0x3E] = 0x09
+                    key = 0x09
                 if event.key == pygame.K_BACKSPACE:
-                    self.memory[0x3E] = 0x08
+                    key = 0x08
+            if event.type == pygame.KEYUP:
+                if event.unicode in enabled_symbols:
+                    keyup = int.from_bytes(event.unicode.encode("cp1251"))
+                if event.key == pygame.K_LEFT:
+                    keyup = 0x11
+                elif event.key == pygame.K_UP:
+                    keyup = 0x12
+                elif event.key == pygame.K_RIGHT:
+                    keyup = 0x13
+                elif event.key == pygame.K_DOWN:
+                    keyup = 0x14
+                elif event.key == pygame.K_RETURN:
+                    keyup = 0x0A
+                elif event.key == pygame.K_TAB:
+                    keyup = 0x09
+                if event.key == pygame.K_BACKSPACE:
+                    keyup = 0x08
+        #
+        if not self.toggle_keys:
+            if key != 0:
+                self.memory[0x3E] = key
+        else:
+            if self.toggle_key == 0:
+                self.toggle_key = key
+            if self.toggle_key == keyup:
+                self.toggle_key = 0
+            if self.toggle_key != 0:
+                self.memory[0x3E] = self.toggle_key
         #
         #
         #
