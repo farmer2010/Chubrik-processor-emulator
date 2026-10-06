@@ -207,8 +207,12 @@ def is_number(token):
 
 def get_error(err_code, line_ind, pos, code, token=Token(" ")):
     res = f"Syntax error (code {err_code}) on line {line_ind}:\n"
-    res += code.split("\n")[line_ind] + "\n"
-    res += " " * pos + "^\n"
+    res += code.split("\n")[line_ind].replace("\t", "    ") + "\n"
+    t = 0
+    for symb in code.split("\n")[line_ind]:
+        if symb == "\t":
+            t += 3
+    res += " " * (pos + t) + "^\n"
     if err_code == 0:
         res += f'Unknown command: "{token}"'
     elif err_code == 1:
@@ -793,7 +797,7 @@ def compile(code):
     return(lines_level3, console, 0)
 
 code = '''
-label db C, 0, 0
+\tdd
 '''
 
 #res = compile(code)
