@@ -96,7 +96,7 @@ class Emulator():
         self.console = [[self.font[0] for x in range(console_w)]for y in range(console_h)]#консоль
         self.console_index = 0#положение курсора консоли
         self.console_buffer = []#когда тут накопятся 6 байт, в консоль выведется графический символ
-        self.toggle_keys = 1
+        self.toggle_keys = 0
         self.toggle_key = 0
         self.bell = 0#состояние звонка
         self.stop = 0#была ли программа остановлена
