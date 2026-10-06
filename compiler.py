@@ -243,6 +243,10 @@ def get_error(err_code, line_ind, pos, code, token=Token(" ")):
         res += "Invalid number format"
     elif err_code == 14:
         res += f"Number must be between 0 and 255, not {token}"
+    elif err_code == 15:
+        res += f"Invalid colon placement"
+    elif err_code == 16:
+        res += f"Invalid comma placement"
     res += "\n\n"
     return(res)
 
@@ -392,10 +396,20 @@ def compile(code):
     for i in range(len(lines_level2)):
         cont = 0
         command = lines_level2[i]
-        #unknown command
+        #неизвестная команда
         if command[0].type == "unknown" and ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or \
             (command[0].type != "command" and command[0].type != "unknown"):
             console += get_error(0, command[0].line_ind, command[0].symb_ind, code, token=command[0])
+            error = 1
+            continue
+        #двоеточие в конце строки
+        if command[-1] == ":" and command[0].type != "unknown":
+            console += get_error(15, command[-1].line_ind, command[-1].symb_ind, code)
+            error = 1
+            continue
+        #запятая в конце строки
+        if command[-1] == ",":
+            console += get_error(16, command[-1].line_ind, command[-1].symb_ind, code)
             error = 1
             continue
         #incorrect label name
@@ -798,13 +812,11 @@ def compile(code):
     return(lines_level3, console, 0)
 
 code = '''
-a
-b
-c
-d
-
-1
-2
+void db 0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,
+		0,0,0,0,0,0,0,
 '''
 
 #res = compile(code)
