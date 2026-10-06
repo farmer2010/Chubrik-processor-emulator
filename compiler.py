@@ -393,7 +393,8 @@ def compile(code):
         cont = 0
         command = lines_level2[i]
         #unknown command
-        if command[0].type == "unknown" and ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)):
+        if command[0].type == "unknown" and ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or \
+            (command[0].type != "command" and command[0].type != "unknown"):
             console += get_error(0, command[0].line_ind, command[0].symb_ind, code, token=command[0])
             error = 1
             continue
@@ -797,7 +798,13 @@ def compile(code):
     return(lines_level3, console, 0)
 
 code = '''
-\tdd
+a
+b
+c
+d
+
+1
+2
 '''
 
 #res = compile(code)
