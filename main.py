@@ -40,6 +40,9 @@ left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 2
 render_text("CONSOLE HEIGHT:", (5, 320), left_buttons_img, font=font14)
 left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 340))
 render_text("TOGGLE KEYS:", (5, 380), left_buttons_img, font=font14)
+left_buttons_img.blit(get_text_box_image(30, 30, color=(160, 160, 160)), (140, 370))
+
+radiobutton_img = get_button_image(24, 24, 0, color=(180, 180, 180))
 
 console_background = get_text_box_image(W - 20, H - 30, color=(180, 180, 180))
 
@@ -168,6 +171,8 @@ while keep_going:
                             mouse_connect = 0
                     else:
                         mouse_connect = 0
+                    if mousepos[0] > 140 and mousepos[0] < 170 and mousepos[1] > 400 and mousepos[1] < 430:
+                        emu.toggle_keys = not emu.toggle_keys
     #
     #ОБНОВЛЕНИЕ
     #
@@ -234,6 +239,9 @@ while keep_going:
                     cursor_timer = 0
                 if cursor_timer < fps/2:
                     pygame.draw.rect(screen, (0, 0, 0), (20 + 11 * len(texts[mouse_connect - 1]), 256 + 60 * (mouse_connect - 1), 2, 18))
+            #
+            if emu.toggle_keys:
+                screen.blit(radiobutton_img, (143, 403))
     elif menu == "console":
         screen.blit(console_background, (0, 30))
         lines = emu.compilation_console.split("\n")

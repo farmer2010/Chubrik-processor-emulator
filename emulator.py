@@ -24,6 +24,7 @@ sound = pygame.mixer.Sound("files/sound/Powerup5.wav")
 
 font80 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 80)
 font48 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 48)
+font32 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 32)
 
 def get_symbol(ind, scale=8):
     img = pygame.Surface((6, 8))
@@ -329,6 +330,30 @@ class Emulator():
             indicator -= 65536
         render_text(str(indicator), (W * 0.75 - 256 + 150, H / 2 + 260), screen, font=font80, color=(255, 0, 0))
         #
+        if self.toggle_keys:
+            txt = "TOGGLED KEY: "
+            if self.toggle_key != 0:
+                if self.toggle_key == 32:
+                    txt += "SPACE"
+                elif self.toggle_key == 0x0A:
+                    txt += "ENTER"
+                elif self.toggle_key == 0x08:
+                    txt += "BACKSPACE"
+                elif self.toggle_key == 0x09:
+                    txt += "TAB"
+                elif self.toggle_key == 0x11:
+                    txt += "LEFT"
+                elif self.toggle_key == 0x12:
+                    txt += "UP"
+                elif self.toggle_key == 0x13:
+                    txt += "RIGHT"
+                elif self.toggle_key == 0x14:
+                    txt += "DOWN"
+                else:
+                    txt += bytes([self.toggle_key]).decode("cp1251")
+            render_text(txt, (W * 0.75 - 256 + 150, H / 2 + 340), screen, font=font32, color=(0, 0, 0))
+
+        #
         console_pos = (300 + (W * 0.75 - 106 - 300) / 2 - self.console_w * 6 * self.console_scale / 2, H / 2 - self.console_h * 8 * self.console_scale / 2)
         pygame.draw.rect(screen, (0, 0, 0), (
             console_pos[0] - 2,
@@ -419,13 +444,12 @@ class Emulator():
         if not self.toggle_keys:
             if key != 0:
                 self.memory[0x3E] = key
+            self.toggle_key = 0
         else:
             if self.toggle_key == 0:
                 self.toggle_key = key
             if self.toggle_key == keyup:
                 self.toggle_key = 0
-            if self.toggle_key != 0:
-                self.memory[0x3E] = self.toggle_key
         #
         #
         #
@@ -437,6 +461,9 @@ class Emulator():
             speed = min(int(self.tick_count) - int(old_ticks), 50000)
             #
             for i in range(speed if one_step == 0 else 1):
+                if self.toggle_keys and self.toggle_key != 0:
+                        self.memory[0x3E] = self.toggle_key
+                #
                 counter += 1
                 self.tick_count += 1
                 #
