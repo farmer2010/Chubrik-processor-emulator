@@ -128,6 +128,7 @@ class Emulator():
         self.filename = ""
         self.compilation_console = ""
         self.compilation_error = 0
+        self.file_not_found = 0
 
     #
     #ЗАГРУЗКА/ОЧИСТКА
@@ -160,6 +161,7 @@ class Emulator():
         #
         self.compilation_console = ""
         self.compilation_error = 0
+        self.file_not_found = 0
         #
         self.tick_count = 0
 
@@ -167,19 +169,23 @@ class Emulator():
         self.clear()
         if self.filename != "":
             #
-            file = open(self.filename, encoding="utf-8")#загрузка программы
-            txt = file.read()
-            file.close()
-            res = compile(txt)
-            code = res[0]
-            self.compilation_console = f'File "{self.filename}":\n' + res[1]
-            #print(self.compilation_console)
-            if res[2]:
-                self.compilation_error = 1
-            for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
-                self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
-                if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
-                    self.update_ports(i, code[i])
+            try:
+                file = open(self.filename, encoding="utf-8")#загрузка программы
+                txt = file.read()
+                file.close()
+                res = compile(txt)
+                code = res[0]
+                self.compilation_console = f'File "{self.filename}":\n' + res[1]
+                #print(self.compilation_console)
+                if res[2]:
+                    self.compilation_error = 1
+                for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
+                    self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
+                    if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
+                        self.update_ports(i, code[i])
+            except:
+                self.file_not_found = 1
+                self.compilation_console = f'File "{self.filename}":\nFile not found'
 
     def change_console_scale(self, w, h):
         self.console_w = w

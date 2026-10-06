@@ -19,6 +19,7 @@ timer = pygame.time.Clock()
 font16 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 16)
 font14 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 14)
 progfont = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 13)
+font_alert = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 32)
 
 emu = Emulator()
 
@@ -38,6 +39,7 @@ render_text("CONSOLE WIDTH:", (5, 260), left_buttons_img, font=font14)
 left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 280))
 render_text("CONSOLE HEIGHT:", (5, 320), left_buttons_img, font=font14)
 left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 340))
+render_text("TOGGLE KEYS:", (5, 380), left_buttons_img, font=font14)
 
 console_background = get_text_box_image(W - 20, H - 30, color=(180, 180, 180))
 
@@ -184,14 +186,19 @@ while keep_going:
     screen.blit(up_buttons_img, (0, 0))
     #
     if menu == "main" or menu == "memory":
+        alerts = []
         if emu.compilation_error:
-            render_text("[COMPILATION ERROR]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+            alerts.append("[COMPILATION ERROR]")
         elif emu.stop:
-            render_text("[PROGRAM FINISHED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+            alerts.append("[PROGRAM FINISHED]")
         elif emu.breakpoint:
-            render_text("[BREAKPOINT. PRESS F4]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
-        elif emu.pause:
-            render_text("[PAUSED]", (W / 2, 35), screen, color=(255, 0, 0), font=font48, centerx="center")
+            alerts.append("[BREAKPOINT. PRESS F4]")
+        elif emu.file_not_found:
+            alerts.append("[FILE NOT FOUND]")
+        if emu.pause:
+            alerts.append("[PAUSED]")
+        for i in range(len(alerts)):
+            render_text(alerts[i], (W / 2, 35 + i * 35), screen, color=(255, 0, 0), font=font_alert, centerx="center")
     #
     if menu == "main":
         emu.draw(screen)

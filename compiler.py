@@ -683,7 +683,7 @@ def compile(code):
     #ФИНАЛЬНОЕ ПРЕОБРАЗОВАНИЕ В БАЙТ - КОД
     #
     #print(change_data)
-    print(lines_level2)
+    #print(lines_level2)
     lines_level3 = []
     f = 1
     for line in lines_level2:
