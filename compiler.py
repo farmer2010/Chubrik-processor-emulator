@@ -278,7 +278,7 @@ def compile(code):
             line_ind += 1
             pos = 0
         #
-        if (symbol == "'" or symbol == '"') and not comment:
+        if (symbol == "'" or symbol == '"') and not comment and not double_block:
             if txt == None:
                 txt = symbol
             elif txt == symbol:
@@ -320,6 +320,10 @@ def compile(code):
                     buffer += "\f"
                 elif next_symbol == "r":
                     buffer += "\r"
+                elif next_symbol == '"':
+                    buffer += '"'
+                elif next_symbol == "'":
+                    buffer += "'"
                 double_block = 1
             elif not double_block:
                 buffer += symbol
@@ -812,9 +816,9 @@ def compile(code):
     console += f"Code length: {len(lines_level3)} bytes"
     return(lines_level3, console, 0)
 
-code = '''
-.bank 0
-'''
+#file = open("files/programs/farmer_2010/test.asm", encoding="utf-8")
+#code = file.read()
+#file.close()
 
 #res = compile(code)
 #print(res[1])
