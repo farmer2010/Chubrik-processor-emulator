@@ -433,6 +433,11 @@ class Emulator():
                         key = 0x09
                     if event.key == pygame.K_BACKSPACE:
                         key = 0x08
+                else:
+                    if event.key == pygame.K_MINUS:
+                        self.speed = int(self.speed / 2)
+                    if event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
+                        self.speed = min(self.speed * 2, 10000000)
             if event.type == pygame.KEYUP:
                 if event.unicode in enabled_symbols:
                     keyup = int.from_bytes(event.unicode.encode("cp1251"))
