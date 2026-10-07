@@ -181,10 +181,13 @@ while keep_going:
                     if mousepos[0] > 10 and mousepos[0] < 160:
                         if mousepos[1] > 250 and mousepos[1] < 280:
                             mouse_connect = 1
+                            cursor_timer = 0
                         elif mousepos[1] > 310 and mousepos[1] < 340:
                             mouse_connect = 2
+                            cursor_timer = 0
                         elif mousepos[1] > 370 and mousepos[1] < 400:
                             mouse_connect = 3
+                            cursor_timer = 0
                         else:
                             mouse_connect = 0
                     else:
