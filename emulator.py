@@ -341,6 +341,8 @@ class Emulator():
                     txt += "BACKSPACE"
                 elif self.toggle_key == 0x09:
                     txt += "TAB"
+                elif self.toggle_key == 127:
+                    txt += "DELETE"
                 elif self.toggle_key == 0x11:
                     txt += "LEFT"
                 elif self.toggle_key == 0x12:
@@ -462,7 +464,7 @@ class Emulator():
             #
             for i in range(speed if one_step == 0 else 1):
                 if self.toggle_keys and self.toggle_key != 0:
-                        self.memory[0x3E] = self.toggle_key
+                    self.memory[0x3E] = self.toggle_key
                 #
                 counter += 1
                 self.tick_count += 1
@@ -485,7 +487,7 @@ class Emulator():
                     pass#stop
                     self.stop = 1
                 elif opcode == 0x02:
-                    if b or one_step:
+                    if b:
                         self.index = (self.index + 1) % 256
                         b = 0
                         break

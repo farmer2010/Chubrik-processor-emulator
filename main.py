@@ -12,7 +12,7 @@ W = pygame.display.Info().current_w
 H = pygame.display.Info().current_h
 
 screen = pygame.display.set_mode((W, H), pygame.FULLSCREEN)
-pygame.display.set_caption("emulator")
+pygame.display.set_caption("Emulator")
 keep_going = 1
 timer = pygame.time.Clock()
 

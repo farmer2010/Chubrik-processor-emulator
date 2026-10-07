@@ -1,3 +1,5 @@
+import pygame
+
 spaces = [" ", "\n", "\t", chr(65279)]
 symb = [",", ":", "-", "+", "$", "@"]
 words = ["db", "equ", ".bank"]
@@ -332,7 +334,6 @@ def compile(code):
                 i == len(code) - 1:
             token_type = None
             if buffer != "":
-                #print(f'{line}, "{buffer}", "{symbol}"')
                 if buffer == "db":
                     db = 1
                 elif db and len(line) > 0 and line[-1] != "," and line[-1] != "db" and line[-1] != "-" and line[-1] != "+" and buffer != ",":
@@ -397,8 +398,8 @@ def compile(code):
         cont = 0
         command = lines_level2[i]
         #неизвестная команда
-        if command[0].type == "unknown" and ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or \
-            (command[0].type != "command" and command[0].type != "unknown"):
+        if command[0] != ".bank" and (command[0].type == "unknown" and ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or
+            (command[0].type != "command" and command[0].type != "unknown")):
             console += get_error(0, command[0].line_ind, command[0].symb_ind, code, token=command[0])
             error = 1
             continue
@@ -812,11 +813,7 @@ def compile(code):
     return(lines_level3, console, 0)
 
 code = '''
-void db 0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,
-		0,0,0,0,0,0,0,
+.bank 0
 '''
 
 #res = compile(code)
