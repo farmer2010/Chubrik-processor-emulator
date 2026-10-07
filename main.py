@@ -58,7 +58,26 @@ show_panel_button_pos = 600
 console_button_pos = 750
 memory_button_pos = 900
 
-texts = [str(emu.speed), str(emu.console_w), str(emu.console_h)]
+texts = ["", str(emu.console_w), str(emu.console_h)]
+
+def get_param_text(i):
+    if i == 0:
+        return(str(emu.speed))
+    elif i == 1:
+        return(texts[1])
+    elif i == 2:
+        return(texts[2])
+    return("")
+
+def set_param(i, text):
+    if i == 0:
+        emu.speed = int(text) if text != "" else 0
+    elif i == 1:
+        texts[1] = text
+    elif i == 2:
+        texts[2] = text
+
+
 mouse_connect = 0#0 - no, 1 - speed, 2 - console w, 3 - console h
 cursor_timer = 0
 change_console = 0
@@ -72,6 +91,7 @@ steps = 0
 tps = 0
 while keep_going:
     events = pygame.event.get()
+    keys = pygame.key.get_pressed()
     for event in events:
         if event.type == pygame.QUIT:
             keep_going = 0
@@ -80,17 +100,15 @@ while keep_going:
                 menu = "main"
             if mouse_connect != 0:
                 if event.key == pygame.K_BACKSPACE:
-                    texts[mouse_connect - 1] = texts[mouse_connect - 1][:-1]
-                    t = texts[mouse_connect - 1]
-                    if mouse_connect == 1:
-                        emu.speed = int(t) if len(t) > 0 else 0
+                    t = get_param_text(mouse_connect - 1)[:-1]
+                    set_param(mouse_connect - 1, t)
+                    if mouse_connect == 2 or mouse_connect == 3:
+                        change_console = 1
                 if event.unicode in ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]:
-                    if len(texts[mouse_connect - 1]) < 12:
-                        texts[mouse_connect - 1] += event.unicode
-                        t = texts[mouse_connect - 1]
-                        if mouse_connect == 1:
-                            emu.speed = int(t) if len(t) > 0 else 0
-                        elif mouse_connect == 2 or mouse_connect == 3:
+                    if len(get_param_text(mouse_connect - 1)) < 12:
+                        t = get_param_text(mouse_connect - 1) + event.unicode
+                        set_param(mouse_connect - 1, t)
+                        if mouse_connect == 2 or mouse_connect == 3:
                             change_console = 1
             if event.key == pygame.K_F2:
                 if change_console:
@@ -198,6 +216,8 @@ while keep_going:
             alerts.append("[PROGRAM FINISHED]")
         elif emu.breakpoint:
             alerts.append("[BREAKPOINT. PRESS F4]")
+        elif emu.invalid_console_scale:
+            alerts.append("[INVALID CONSOLE SCALE]")
         elif emu.file_not_found:
             alerts.append("[FILE NOT FOUND]")
         if emu.pause:
@@ -232,13 +252,14 @@ while keep_going:
             render_text(f"terminal:  {emu.enable_console}", (5, 200), screen, font=font14)
             #
             for i in range(3):
-                render_text(texts[i], (20, 258 + 60 * i), screen, font=font14)
+                t = get_param_text(i)
+                render_text(t, (20, 258 + 60 * i), screen, font=font14)
             if mouse_connect > 0:
                 cursor_timer += 1
                 if cursor_timer > fps:
                     cursor_timer = 0
                 if cursor_timer < fps/2:
-                    pygame.draw.rect(screen, (0, 0, 0), (20 + 11 * len(texts[mouse_connect - 1]), 256 + 60 * (mouse_connect - 1), 2, 18))
+                    pygame.draw.rect(screen, (0, 0, 0), (20 + 11 * len(get_param_text(mouse_connect - 1)), 256 + 60 * (mouse_connect - 1), 2, 18))
             #
             if emu.toggle_keys:
                 screen.blit(radiobutton_img, (143, 403))

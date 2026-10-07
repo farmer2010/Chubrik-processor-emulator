@@ -130,6 +130,7 @@ class Emulator():
         self.compilation_console = ""
         self.compilation_error = 0
         self.file_not_found = 0
+        self.invalid_console_scale = 0
 
     #
     #ЗАГРУЗКА/ОЧИСТКА
@@ -168,33 +169,38 @@ class Emulator():
 
     def load(self):
         self.clear()
-        if self.filename != "":
-            #
-            try:
-                file = open(self.filename, encoding="utf-8")#загрузка программы
-                txt = file.read()
-                file.close()
-                res = compile(txt)
-                code = res[0]
-                self.compilation_console = f'File "{self.filename}":\n' + res[1]
-                #print(self.compilation_console)
-                if res[2]:
-                    self.compilation_error = 1
-                for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
-                    self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
-                    if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
-                        self.update_ports(i, code[i])
-            except:
-                self.file_not_found = 1
-                self.compilation_console = f'File "{self.filename}":\nFile not found'
+        if not self.invalid_console_scale:
+            if self.filename != "":
+                #
+                try:
+                    file = open(self.filename, encoding="utf-8")#загрузка программы
+                    txt = file.read()
+                    file.close()
+                    res = compile(txt)
+                    code = res[0]
+                    self.compilation_console = f'File "{self.filename}":\n' + res[1]
+                    #print(self.compilation_console)
+                    if res[2]:
+                        self.compilation_error = 1
+                    for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
+                        self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
+                        if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
+                            self.update_ports(i, code[i])
+                except:
+                    self.file_not_found = 1
+                    self.compilation_console = f'File "{self.filename}":\nFile not found'
 
     def change_console_scale(self, w, h):
-        self.console_w = w
-        self.console_h = h
-        dw = W * 0.75 - 256 + 150 - 300 - 100
-        dh = H - 30 - 100
-        self.console_scale = max(int(min(dw / (self.console_w * 6), dh / (self.console_h * 8))), 1)
-        self.font = [get_symbol(i, scale=self.console_scale) for i in range(256)]  # шрифт для консоли
+        if w != 0 and h != 0:
+            self.console_w = w
+            self.console_h = h
+            dw = W * 0.75 - 256 + 150 - 300 - 100
+            dh = H - 30 - 100
+            self.console_scale = max(int(min(dw / (self.console_w * 6), dh / (self.console_h * 8))), 1)
+            self.font = [get_symbol(i, scale=self.console_scale) for i in range(256)]#шрифт для консоли
+            self.invalid_console_scale = 0
+        else:
+            self.invalid_console_scale = 1
 
     #
     #ВВОД/ВЫВОД
@@ -399,32 +405,34 @@ class Emulator():
         one_step = 0
         key = 0
         keyup = 0
+        mods = pygame.key.get_mods()
         for event in events:
             if event.type == pygame.KEYDOWN:
-                if event.key == pygame.K_F1:
-                    self.pause = not self.pause
-                if event.key == pygame.K_F3:
-                    one_step = 1
-                if event.key == pygame.K_F4:
-                    b = 1
-                    self.breakpoint = 0
-                #
-                if event.unicode in enabled_symbols:
-                    key = int.from_bytes(event.unicode.encode("cp1251"))
-                if event.key == pygame.K_LEFT:
-                    key = 0x11
-                elif event.key == pygame.K_UP:
-                    key = 0x12
-                elif event.key == pygame.K_RIGHT:
-                    key = 0x13
-                elif event.key == pygame.K_DOWN:
-                    key = 0x14
-                elif event.key == pygame.K_RETURN:
-                    key = 0x0A
-                elif event.key == pygame.K_TAB:
-                    key = 0x09
-                if event.key == pygame.K_BACKSPACE:
-                    key = 0x08
+                if not mods & pygame.KMOD_CTRL:
+                    if event.key == pygame.K_F1:
+                        self.pause = not self.pause
+                    if event.key == pygame.K_F3:
+                        one_step = 1
+                    if event.key == pygame.K_F4:
+                        b = 1
+                        self.breakpoint = 0
+                    #
+                    if event.unicode in enabled_symbols:
+                        key = int.from_bytes(event.unicode.encode("cp1251"))
+                    if event.key == pygame.K_LEFT:
+                        key = 0x11
+                    elif event.key == pygame.K_UP:
+                        key = 0x12
+                    elif event.key == pygame.K_RIGHT:
+                        key = 0x13
+                    elif event.key == pygame.K_DOWN:
+                        key = 0x14
+                    elif event.key == pygame.K_RETURN:
+                        key = 0x0A
+                    elif event.key == pygame.K_TAB:
+                        key = 0x09
+                    if event.key == pygame.K_BACKSPACE:
+                        key = 0x08
             if event.type == pygame.KEYUP:
                 if event.unicode in enabled_symbols:
                     keyup = int.from_bytes(event.unicode.encode("cp1251"))
