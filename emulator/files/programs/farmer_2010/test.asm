@@ -1,0 +1,10 @@
+;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+;W                       ОБЩАЯ ОБЛАСТЬ                         W
+;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+.bank 0
+
+str db "my \"quoted\" text"
+hlt
+
+.bank 1
+
