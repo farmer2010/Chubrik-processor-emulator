@@ -207,7 +207,7 @@ def numbergen(tokens):
 def is_number(token):
     return(token.type == "number" or token.type == "string" or token == "$" or token == "@" or token.type == "unknown")
 
-def test_param(param, target_param_types, code, labels):
+def test_param(param, target_param_types, code, labels, max_string_len=1):
     console_changes = ""
     param_type = "no"
     if len(param) != 0:
@@ -243,7 +243,7 @@ def test_param(param, target_param_types, code, labels):
             #
             if token.type == "string":
                 #string too long
-                if len(token.text) > 3:
+                if len(token.text) - 2 > max_string_len or len(token.text) - 2 <= 0:
                     console_changes += get_error(11, token.line_ind, token.symb_ind + 1, code, Token(str(len(token.text) - 2)))
                     return(console_changes, 1)
     return("", 0)
@@ -587,7 +587,7 @@ def compile(code):
                     break
             #
             for param in params:
-                res = test_param(param, "p", code, labels)
+                res = test_param(param, "p", code, labels, max_string_len=1000)
                 if res[1]:
                     console += res[0]
                     error = 1
