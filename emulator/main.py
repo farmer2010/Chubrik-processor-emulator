@@ -30,7 +30,8 @@ up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="pa
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="show panel", font=font16), (450, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="console", font=font16), (600, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="show memory", font=font16), (750, 0))
-up_buttons_img.blit(get_button_image(W - 900, 30, 0, color=(180, 180, 180)), (900, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="counter", font=font16), (900, 0))
+up_buttons_img.blit(get_button_image(W - 1050, 30, 0, color=(180, 180, 180)), (1050, 0))
 
 left_buttons_img = get_button_image(300, H - 30, 0, color=(180, 180, 180))
 render_text("SPEED:", (5, 200), left_buttons_img, font=font14)
@@ -57,6 +58,7 @@ pause_button_pos = 450
 show_panel_button_pos = 600
 console_button_pos = 750
 memory_button_pos = 900
+counter_button_pos = 1050
 
 texts = ["", str(emu.console_w), str(emu.console_h)]
 
@@ -129,6 +131,12 @@ while keep_going:
                 elif menu == "memory":
                     menu = "main"
                 mouse_connect = 0
+            if event.key == pygame.K_F7:
+                if menu != "counter":
+                    menu = "counter"
+                elif menu == "counter":
+                    menu = "main"
+                mouse_connect = 0
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -169,6 +177,12 @@ while keep_going:
                         elif menu == "memory":
                             menu = "main"
                         mouse_connect = 0
+                    elif mousepos[0] < counter_button_pos:
+                        if menu != "counter":
+                            menu = "counter"
+                        elif menu == "counter":
+                            menu = "main"
+                        mouse_connect = 0
                 #
                 if menu == "console":
                     if mousepos[1] > 30 and mousepos[0] > W - 20:
@@ -198,7 +212,7 @@ while keep_going:
     #ОБНОВЛЕНИЕ
     #
     fps = round(timer.get_fps(), 2)
-    if menu == "main" or menu == "memory":
+    if menu == "main" or menu == "memory" or menu == "counter":
         current_time = time.time()
         counter = emu.update(events, fps)
         #
@@ -211,7 +225,7 @@ while keep_going:
     screen.fill((255, 255, 255))
     screen.blit(up_buttons_img, (0, 0))
     #
-    if menu == "main" or menu == "memory":
+    if menu == "main" or menu == "memory" or menu == "counter":
         alerts = []
         if emu.compilation_error:
             alerts.append("[COMPILATION ERROR]")
@@ -295,6 +309,13 @@ while keep_going:
         #
         b = emu.bank
         screen.blit(bank_img, (b * 110 + 160 * (b >= 8) + 5, 84))
+    elif menu == "counter":
+        for i in range(32):
+            for j in range(8):
+                ind = j * 32 + i
+                render_text(f"{ind:02X}:", (W / 2 - 480 + (j * 120 + 30), H / 2 - 224 + 14 * i), screen, font=progfont, centerx="right", color=(128, 128, 128))
+                render_text(f"{emu.opers_types_count[ind]}", (W / 2 - 480 + (j * 120 + 40), H / 2 - 224 + 14 * i), screen, font=progfont)
+        render_text(f"All: {emu.opers_count}", (W / 2 - 480, H / 2 - 224 - 28), screen, font=progfont)
     steps += 1
     #
     pygame.display.update()
