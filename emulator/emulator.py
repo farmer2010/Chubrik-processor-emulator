@@ -44,16 +44,6 @@ def generate_symbol(data, scale=8):
     img = pygame.transform.scale(img, (6 * scale, 8 * scale))
     return (img)
 
-enabled_symbols = [
-    "0", "1", "2", "3", "4", "5", "6", "7", "8", "9",
-    "+", "-", "*", "/", "=", "_", "(", ")", "[", "]", "{", "}", "!", "@", "#", "$", "%", "^", "&", "`", "~", "№", ";", "?", ":", ".", ",", "'", '"', "\\", "<", ">", "|",
-    "A", "B", "C", "D", "E", "F", "G", "H", "I", "J", "K", "L", "M", "N", "O", "P", "Q", "R", "S", "T", "U", "V", "W", "X", "Y", "Z",
-    "a", "b", "c", "d", "e", "f", "g", "h", "i", "j", "k", "l", "m", "n", "o", "p", "q", "r", "s", "t", "u", "v", "w", "x", "y", "z",
-    "А", "Б", "В", "Г", "Д", "Е", "Ё", "Ж", "З", "И", "Й", "К", "Л", "М", "Н", "О", "П", "Р", "С", "Т", "У", "Ф", "Х", "Ц", "Ч", "Ш", "Щ", "Ъ", "Ы", "Ь", "Э", "Ю", "Я",
-    "а", "б", "в", "г", "д", "е", "ё", "ж", "з", "и", "й", "к", "л", "м", "н", "о", "п", "р", "с", "т", "у", "ф", "х", "ц", "ч", "ш", "щ", "ъ", "ы", "ь", "э", "ю", "я",
-    " ", chr(127)#delete
-]
-
 def dec_to_bin(num):
     out = ""
     for i in range(8):
@@ -126,6 +116,9 @@ class Emulator():
         self.speed = 500#скорость в тиках в секунду
         self.tick_count = 0
         #
+        self.opers_count = 0
+        self.opers_types_count = [0 for x in range(256)]
+        #
         self.filename = ""
         self.compilation_console = ""
         self.compilation_error = 0
@@ -166,6 +159,9 @@ class Emulator():
         self.file_not_found = 0
         #
         self.tick_count = 0
+        #
+        self.opers_count = 0
+        self.opers_types_count = [0 for x in range(256)]
 
     def load(self):
         self.clear()
@@ -201,6 +197,101 @@ class Emulator():
             self.invalid_console_scale = 0
         else:
             self.invalid_console_scale = 1
+
+    #
+    #СОХРАНЕНИЕ/ЗАГРУЗКА СОСТОЯНИЯ
+    #
+
+    def save_state(self, filename):
+        out = []
+        #
+        out.append(self.console_w)
+        out.append(self.console_h)
+        out.append((self.speed & 0xFF0000) >> 16)
+        out.append((self.speed & 0xFF00) >> 8)
+        out.append(self.speed & 0xFF)
+        out.append((self.enable_display << 4) | (self.enable_indicator << 2) | self.enable_console)
+        out.append(self.console_index)
+        out.append(len(self.console_buffer))
+        for n in range(6):
+            if n < len(self.console_buffer):
+                out.append(self.console_buffer[n])
+            else:
+                out.append(0)
+        out.append(self.index)
+        out.append(self.bank)
+        out.append(self.reg[0])
+        out.append(self.reg[1])
+        out.append(self.reg[2])
+        out.append(self.reg[3])
+        out.append(self.flags[0] * 0b1000 | self.flags[1] * 0b0100 | self.flags[2] * 0b0010 | self.flags[3] * 0b0001)
+        out += self.memory
+        b = 0
+        ind = 0
+        for i in range(2):
+            for y in range(16):
+                for x in range(16):
+                    b = b << 1
+                    b = b | self.colors[x][y][i]
+                    ind += 1
+                    if ind >= 8:
+                        ind = 0
+                        out.append(b)
+                        b = 0
+        #
+        file = open(filename, "wb")
+        file.write(bytes(out))
+        file.close()
+
+    def load_state(self, filename):
+        CW_IND = 0
+        CH_IND = 1
+        SPD_IND = 2
+        CONNECT_IND = 5
+        CONS_IND_IND = 6
+        CONS_BUF_SIZE_IND = 7
+        CONS_BUF_IND = 8
+        IND_IND = 14
+        BANK_IND = 15
+        A_IND = 16
+        B_IND = 17
+        C_IND = 18
+        D_IND = 19
+        FLAGS_IND = 20
+        MEM_IND = 21
+        DISP_IND = 32768 + 21
+        #
+        file = open(filename, "rb")
+        data = file.read()
+        file.close()
+        #
+        self.change_console_scale(data[CW_IND], data[CH_IND])
+        self.speed = (data[SPD_IND] << 16) | (data[SPD_IND + 1] << 8) | data[SPD_IND + 2]
+        self.enable_display = (data[CONNECT_IND] & 0b00110000) >> 4
+        self.enable_indicator = (data[CONNECT_IND] & 0b00001100) >> 2
+        self.enable_console = data[CONNECT_IND] & 0b00000001
+        #
+        self.console_index = data[CONS_IND_IND]
+        self.console_buffer = []
+        for i in range(data[CONS_BUF_SIZE_IND]):
+            self.console_buffer.append(data[CONS_BUF_IND + i])
+        #
+        self.index = data[IND_IND]
+        self.bank = data[BANK_IND]
+        self.reg[0] = data[A_IND]
+        self.reg[1] = data[B_IND]
+        self.reg[2] = data[C_IND]
+        self.reg[3] = data[D_IND]
+        self.flags = [(data[FLAGS_IND] & (2 ** (3 - i))) > 0 for i in range(4)]
+        for i in range(32768):
+            self.memory[i] = data[MEM_IND + i]
+        #
+        for i in range(2):
+            for x in range(16):
+                for y in range(16):
+                    self.colors[x][y][i] = (data[DISP_IND + i * 32 + y * 2 + ((x & 0b1000) >> 3)] & (2 ** (7 - (x & 0b0111)))) > 0
+                    self.update_colors[x][y] = 1
+        self.update_display()
 
     #
     #ВВОД/ВЫВОД
@@ -360,7 +451,6 @@ class Emulator():
                 else:
                     txt += bytes([self.toggle_key]).decode("cp1251")
             render_text(txt, (W * 0.75 - 256 + 150, H / 2 + 340), screen, font=font32, color=(0, 0, 0))
-
         #
         console_pos = (300 + (W * 0.75 - 106 - 300) / 2 - self.console_w * 6 * self.console_scale / 2, H / 2 - self.console_h * 8 * self.console_scale / 2)
         pygame.draw.rect(screen, (0, 0, 0), (
@@ -417,8 +507,10 @@ class Emulator():
                         b = 1
                         self.breakpoint = 0
                     #
-                    if event.unicode in enabled_symbols:
+                    try:
                         key = int.from_bytes(event.unicode.encode("cp1251"))
+                    except:
+                        pass
                     if event.key == pygame.K_LEFT:
                         key = 0x11
                     elif event.key == pygame.K_UP:
@@ -438,9 +530,15 @@ class Emulator():
                         self.speed = int(self.speed / 2)
                     if event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
                         self.speed = min(self.speed * 2, 10000000)
+                    if event.key == pygame.K_s:
+                        self.save_state("files/saves/sav")
+                    if event.key == pygame.K_l:
+                        self.load_state("files/saves/sav")
             if event.type == pygame.KEYUP:
-                if event.unicode in enabled_symbols:
+                try:
                     keyup = int.from_bytes(event.unicode.encode("cp1251"))
+                except:
+                    pass
                 if event.key == pygame.K_LEFT:
                     keyup = 0x11
                 elif event.key == pygame.K_UP:
@@ -476,6 +574,8 @@ class Emulator():
             speed = min(int(self.tick_count) - int(old_ticks), 50000)
             #
             for i in range(speed if one_step == 0 else 1):
+                self.opers_count += 1
+                #
                 if self.toggle_keys and self.toggle_key != 0:
                     self.memory[0x3E] = self.toggle_key
                 #
@@ -483,6 +583,7 @@ class Emulator():
                 self.tick_count += 1
                 #
                 opcode = self.read(self.index)
+                self.opers_types_count[opcode] += 1
                 oper = self.read((self.index + 1) % 256)
                 hor = opcode & 0x0F#колонки в таблице опкодов
                 vert = (opcode & 0xF0) >> 4#строки в таблице опкодов

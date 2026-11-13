@@ -2,9 +2,9 @@
 ;W                       ОБЩАЯ ОБЛАСТЬ                         W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 .bank 0
+ldi a, 3
+ldi b, 2
 
-str db "my \"quoted\" text"
+cmp a, b
+
 hlt
-
-.bank 1
-

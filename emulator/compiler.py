@@ -682,6 +682,7 @@ def compile(code):
             if index > 255:
                 index = (index - 128) % 128 + 128
                 bank += 1
+    #print(lines_level2)
     #
     #ОБРАБОТКА EQU
     #
@@ -894,7 +895,14 @@ def compile(code):
     return(lines_level3, console, 0)
 
 code = '''
-cmp a, b
+.bank 0
+
+str db "my \\"quoted\\" text", 0, 0
+ldi a, $ + 1
+hlt
+
+.bank 1
+
 '''
 
 #res = compile(code)
