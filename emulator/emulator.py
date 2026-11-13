@@ -126,9 +126,6 @@ class Emulator():
         self.speed = 500#скорость в тиках в секунду
         self.tick_count = 0
         #
-        self.opers_count = 0
-        self.opers_types_count = [0 for x in range(256)]
-        #
         self.filename = ""
         self.compilation_console = ""
         self.compilation_error = 0
@@ -169,9 +166,6 @@ class Emulator():
         self.file_not_found = 0
         #
         self.tick_count = 0
-        #
-        self.opers_count = 0
-        self.opers_types_count = [0 for x in range(256)]
 
     def load(self):
         self.clear()
@@ -482,8 +476,6 @@ class Emulator():
             speed = min(int(self.tick_count) - int(old_ticks), 50000)
             #
             for i in range(speed if one_step == 0 else 1):
-                self.opers_count += 1
-                #
                 if self.toggle_keys and self.toggle_key != 0:
                     self.memory[0x3E] = self.toggle_key
                 #
@@ -491,7 +483,6 @@ class Emulator():
                 self.tick_count += 1
                 #
                 opcode = self.read(self.index)
-                self.opers_types_count[opcode] += 1
                 oper = self.read((self.index + 1) % 256)
                 hor = opcode & 0x0F#колонки в таблице опкодов
                 vert = (opcode & 0xF0) >> 4#строки в таблице опкодов
@@ -538,7 +529,7 @@ class Emulator():
                     self.reg[X] = self.ld(oper)
                 elif 0x54 <= opcode <= 0x57:
                     self.reg[X] = self.ldi(oper)
-                elif 0x60 <= opcode <= 0xDF:
+                elif 0x60 <= opcode <= 0xDF or 0xF0 <= opcode <= 0xFF:
                     if hor % 5 == 0:
                         if vert == 6:
                             self.reg[X] = self.inc(self.reg[X])
@@ -573,6 +564,8 @@ class Emulator():
                             self.reg[X] = self.f_or(self.reg[X], self.reg[Y])
                         elif vert == 13:
                             self.reg[X] = self.f_xor(self.reg[X], self.reg[Y])
+                        elif vert == 15:
+                            self.cmp(self.reg[X], self.reg[Y])
                     #
                 elif 0xE0 <= opcode <= 0xE3:
                     self.reg[X] = self.shl(self.reg[X])
@@ -706,6 +699,14 @@ class Emulator():
         self.flags[o] = not (-128 <= (to_signed(X) - to_signed(Y) - self.flags[c]) <= 127)
         self.index = (self.index + 1) % 256
         return(out % 256)
+
+    def cmp(self, X, Y):
+        out = X - Y
+        self.flags[z] = out % 256 == 0
+        self.flags[o] = not (-128 <= (to_signed(X) - to_signed(Y)) <= 127)
+        self.flags[s] = (out % 256 > 127) ^ self.flags[o]
+        self.flags[c] = out < 0
+        self.index = (self.index + 1) % 256
 
     def test(self, X):
         self.flags[z] = X == 0

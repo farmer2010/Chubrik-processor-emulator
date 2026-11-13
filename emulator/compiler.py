@@ -3,9 +3,9 @@ import pygame
 spaces = [" ", "\n", "\t", chr(65279)]
 symb = [",", ":", "-", "+", "$", "@"]
 words = ["db", "equ", ".bank"]
-all_commands = ["nop", "hlt", "ssp", "ld", "ldi", "st", "jmp", "jz", "js", "jc", "jo", "jnz", "jns", "jnc", "jno", "clr", "mov", "and", "or", "xor", "add", "adc", "sub", "sbb", "test", "inc", "dec", "not", "neg", "rnd", "shl", "shr", "sar", "rcl", "rcr"]
+all_commands = ["nop", "hlt", "ssp", "ld", "ldi", "st", "jmp", "jz", "js", "jc", "jo", "jnz", "jns", "jnc", "jno", "clr", "mov", "and", "or", "xor", "add", "adc", "sub", "sbb", "cmp", "test", "inc", "dec", "not", "neg", "rnd", "shl", "shr", "sar", "rcl", "rcr"]
 cmd1 = {"inc" : 0x60, "dec" : 0x70, "not" : 0x80, "neg" : 0x90, "clr" : 0xA0, "test" : 0xB0, "rcl" : 0xC0, "rcr" : 0xD0}
-cmd2 = {"add" : 0x60, "sub" : 0x70, "adc" : 0x80, "sbb" : 0x90, "mov" : 0xA0, "and" : 0xB0, "or" : 0xC0, "xor" : 0xD0}
+cmd2 = {"add" : 0x60, "sub" : 0x70, "adc" : 0x80, "sbb" : 0x90, "mov" : 0xA0, "and" : 0xB0, "or" : 0xC0, "xor" : 0xD0, "cmp" : 0xF0}
 
 numbers = ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9"]
 fr = ["a", "b", "c", "d", "z", "s", "o"]
@@ -106,6 +106,10 @@ command_notation = {
         "params_count" : 2
     },
     "sbb": {
+        "params" : ["r", "r"],
+        "params_count" : 2
+    },
+    "cmp": {
         "params" : ["r", "r"],
         "params_count" : 2
     },
@@ -890,6 +894,7 @@ def compile(code):
     return(lines_level3, console, 0)
 
 code = '''
+cmp a, b
 '''
 
 #res = compile(code)
