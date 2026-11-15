@@ -1,4 +1,5 @@
 import math
+import crossfiledialog
 from random import randint as rand
 from compiler import *
 from utils import *
@@ -42,7 +43,7 @@ def generate_symbol(data, scale=8):
             if data[x] & (2 ** y):
                 pygame.draw.rect(img, (0, 0, 0), (x, y, 1, 1))
     img = pygame.transform.scale(img, (6 * scale, 8 * scale))
-    return (img)
+    return(img)
 
 def dec_to_bin(num):
     out = ""
@@ -225,7 +226,9 @@ class Emulator():
         out.append(self.reg[2])
         out.append(self.reg[3])
         out.append(self.flags[0] * 0b1000 | self.flags[1] * 0b0100 | self.flags[2] * 0b0010 | self.flags[3] * 0b0001)
+        #
         out += self.memory
+        #
         b = 0
         ind = 0
         for i in range(2):
@@ -238,6 +241,17 @@ class Emulator():
                         ind = 0
                         out.append(b)
                         b = 0
+        #
+        for x in range(self.console_w):
+            for y in range(self.console_h):
+                symb_img = self.console[y][x]
+                for ix in range(6):
+                    byte_buff = 0
+                    for iy in range(8):
+                        byte_buff = byte_buff << 1
+                        if symb_img.get_at((ix * self.console_scale, (7 - iy) * self.console_scale))[0] == 0:
+                            byte_buff = byte_buff | 1
+                    out.append(byte_buff)
         #
         file = open(filename, "wb")
         file.write(bytes(out))
@@ -260,6 +274,7 @@ class Emulator():
         FLAGS_IND = 20
         MEM_IND = 21
         DISP_IND = 32768 + 21
+        TERM_IND = 32768 + 21 + 64
         #
         file = open(filename, "rb")
         data = file.read()
@@ -291,6 +306,14 @@ class Emulator():
                 for y in range(16):
                     self.colors[x][y][i] = (data[DISP_IND + i * 32 + y * 2 + ((x & 0b1000) >> 3)] & (2 ** (7 - (x & 0b0111)))) > 0
                     self.update_colors[x][y] = 1
+        #
+        for x in range(self.console_w):
+            for y in range(self.console_h):
+                b = []
+                for i in range(6):
+                    b.append(data[TERM_IND + x * 6 * self.console_h + y * 6 + i])
+                self.console[y][x] = generate_symbol(b, self.console_scale)
+                b = []
         self.update_display()
 
     #
@@ -531,9 +554,13 @@ class Emulator():
                     if event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
                         self.speed = min(self.speed * 2, 10000000)
                     if event.key == pygame.K_s:
-                        self.save_state("files/saves/sav")
+                        filename = crossfiledialog.save_file(start_dir="/files/saves/", filter=["*.dat"])
+                        if filename != None:
+                            self.save_state(filename + ".dat")
                     if event.key == pygame.K_l:
-                        self.load_state("files/saves/sav")
+                        filename = crossfiledialog.open_file(start_dir="/files/saves/", filter=["*.dat"])
+                        if filename != None:
+                            self.load_state(filename)
             if event.type == pygame.KEYUP:
                 try:
                     keyup = int.from_bytes(event.unicode.encode("cp1251"))

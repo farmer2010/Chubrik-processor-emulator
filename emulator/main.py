@@ -11,8 +11,10 @@ pygame.mixer.set_num_channels(1000)
 W = pygame.display.Info().current_w
 H = pygame.display.Info().current_h
 
+emuname = "Emulator v1.3"
+
 screen = pygame.display.set_mode((W, H), pygame.FULLSCREEN)
-pygame.display.set_caption("Emulator")
+pygame.display.set_caption(emuname)
 keep_going = 1
 timer = pygame.time.Clock()
 
@@ -164,7 +166,7 @@ while keep_going:
             if event.button == 1:
                 if mousepos[1] < 30:
                     if mousepos[0] < open_button_pos:
-                        name = crossfiledialog.open_file(start_dir="files/programs/", filter=["*.asm", "*.txt"])
+                        name = crossfiledialog.open_file(start_dir="/files/programs/", filter=["*.asm", "*.txt"])
                         if name != None:
                             if change_console:
                                 change_console = 0
@@ -172,6 +174,7 @@ while keep_going:
                                 h = int(texts[2]) if len(texts[2]) > 0 else 0
                                 emu.change_console_scale(w, h)
                             emu.filename = name
+                            pygame.display.set_caption(name.split("\\")[-1] + " - " + emuname)
                             emu.load()
                     elif mousepos[0] < restart_button_pos:
                         if change_console:
