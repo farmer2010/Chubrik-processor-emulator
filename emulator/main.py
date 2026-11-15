@@ -53,7 +53,9 @@ up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="sh
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="console", font=font16), (600, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="show memory", font=font16), (750, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="counter", font=font16), (900, 0))
-up_buttons_img.blit(get_button_image(W - 1050, 30, 0, color=(180, 180, 180)), (1050, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="save state", font=font16), (1050, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="load state", font=font16), (1200, 0))
+up_buttons_img.blit(get_button_image(W - 1350, 30, 0, color=(180, 180, 180)), (1350, 0))
 
 left_buttons_img = get_button_image(300, H - 30, 0, color=(180, 180, 180))
 render_text("SPEED:", (5, 200), left_buttons_img, font=font14)

@@ -200,7 +200,7 @@ class Emulator():
             self.invalid_console_scale = 1
 
     #
-    #СОХРАНЕНИЕ/ЗАГРУЗКА СОСТОЯНИЯ
+    #СОХРАНЕНИЕ/ЗАГРУЗКА СОСТОЯНИЯ ЭМУЛЯТОРА
     #
 
     def save_state(self, filename):
@@ -258,6 +258,8 @@ class Emulator():
         file.close()
 
     def load_state(self, filename):
+        self.clear()
+        #
         CW_IND = 0
         CH_IND = 1
         SPD_IND = 2
@@ -601,8 +603,6 @@ class Emulator():
             speed = min(int(self.tick_count) - int(old_ticks), 50000)
             #
             for i in range(speed if one_step == 0 else 1):
-                self.opers_count += 1
-                #
                 if self.toggle_keys and self.toggle_key != 0:
                     self.memory[0x3E] = self.toggle_key
                 #
@@ -610,7 +610,9 @@ class Emulator():
                 self.tick_count += 1
                 #
                 opcode = self.read(self.index)
-                self.opers_types_count[opcode] += 1
+                if not self.stop and not self.breakpoint:
+                    self.opers_types_count[opcode] += 1
+                    self.opers_count += 1
                 oper = self.read((self.index + 1) % 256)
                 hor = opcode & 0x0F#колонки в таблице опкодов
                 vert = (opcode & 0xF0) >> 4#строки в таблице опкодов
