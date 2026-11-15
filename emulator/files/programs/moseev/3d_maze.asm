@@ -256,7 +256,7 @@ get_cos_jmp:
   ldi c, 5 ;переходим к чтению косинуса
   jmp start_bank
 
-BANK MOVE 2
+;BANK MOVE 2
 ;продолжение движения
 move_next:
   ldi c, map

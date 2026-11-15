@@ -1,5 +1,3 @@
-import pygame
-
 spaces = [" ", "\n", "\t", chr(65279)]
 symb = [",", ":", "-", "+", "$", "@"]
 words = ["db", "equ", ".bank"]
@@ -165,7 +163,9 @@ class Token():
         self.text = txt
         self.line_ind = line_ind
         self.symb_ind = symb_ind
-        if txt[0] in numbers or ((len(txt) >= 2) and txt[0] == "-" and txt[1] in numbers):
+        if len(txt) == 0:
+            self.type = "null"
+        elif txt[0] in numbers or ((len(txt) >= 2) and txt[0] == "-" and txt[1] in numbers):
             self.type = "number"
         elif txt in symb:
             self.type = "special symbol"
@@ -194,22 +194,34 @@ class Token():
         return("'" + self.text + "'")
 
 def numbergen(tokens):
-    if len(tokens) == 1:
-        return(Token(str(eval(tokens[0].text)), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind))
-    elif len(tokens) == 3:
-        number1 = eval(tokens[0].text)
-        number2 = eval(tokens[2].text)
+    for token in tokens:#syntax error
+        if token.type != "number" and token != "+" and token != "-":
+            return(None)
+    #
+    while len(tokens) > 1:
+        number1 = int(tokens[0].text, base=0)
+        number2 = int(tokens[2].text, base=0)
         out = 0
         if tokens[1] == "+":
             out = number1 + number2
         elif tokens[1] == "-":
             out = number1 - number2
         out %= 256
-        return(Token(str(out), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind))
-    return(None)#syntax error
+        tokens = [Token(str(out), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind)] + tokens[3:]
+    return(Token(str(int(tokens[0].text, base=0)), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind))
 
 def is_number(token):
     return(token.type == "number" or token.type == "string" or token == "$" or token == "@" or token.type == "unknown")
+
+def test_param_syntax(param):
+    for i in range(len(param)):
+        token = param[i]
+        next_token = param[i + 1] if i < len(param) - 1 else Token("")
+        prev_token = param[i - 1] if i > 0 else Token("")
+        if ((token == "-" or token == "+") and (not is_number(next_token) or not is_number(prev_token))) or \
+            (is_number(token) and (is_number(next_token) or is_number(prev_token))):
+            return(0)
+    return(1)
 
 def test_param(param, target_param_types, code, labels, max_string_len=1):
     console_changes = ""
@@ -221,12 +233,11 @@ def test_param(param, target_param_types, code, labels, max_string_len=1):
             param_type = "p"
     #
     #
-    #incorrect param syntax
+    #invalid param syntax
     if ((param_type == "r" and (len(param) != 1 or param[0].type != "register")) or
             (param_type == "p" and not (
-                    (len(param) == 1 and is_number(param[0])) or
-                    (len(param) == 3 and is_number(param[0]) and is_number(param[2]) and (
-                            param[1] == "-" or param[1] == "+"))
+                (len(param) == 1 and is_number(param[0])) or
+                (len(param) > 1 and test_param_syntax(param))
             ))):
         console_changes += get_error(8, param[0].line_ind, param[0].symb_ind, code)
         return(console_changes, 1)
@@ -522,43 +533,12 @@ def compile(code):
                         param_type[j] = "p"
             #
             for j in range(2):
-                #incorrect param syntax
-                if ((param_type[j] == "r" and (len(param[j]) != 1 or param[j][0].type != "register")) or
-                        (param_type[j] == "p" and not (
-                                (len(param[j]) == 1 and is_number(param[j][0])) or
-                                (len(param[j]) == 3 and is_number(param[j][0]) and is_number(param[j][2]) and (
-                                        param[j][1] == "-" or param[j][1] == "+"))
-                        ))):
-                    console += get_error(8, param[j][0].line_ind, param[j][0].symb_ind, code)
+                res = test_param(param[j], command_notation[command[0].text]["params"][j], code, labels)
+                if res[1]:
+                    console += res[0]
                     error = 1
                     cont = 1
                     break
-                #incorrect param syntax
-                if param[j] != [] and param_type[j] not in command_notation[command[0].text]["params"][j]:
-                    if param_type[j] == "no":
-                        console += get_error(8, param[j][0].line_ind, param[j][0].symb_ind, code)
-                    else:
-                        console += get_error(7, param[j][0].line_ind, param[j][0].symb_ind, code, token=Token("register") if param_type[j] == "r" else Token("expression"))
-                    error = 1
-                    cont = 1
-                    break
-                #
-                if param_type[j] == "p":
-                    for token in param[j]:
-                        #unknown label
-                        if token.type == "unknown" and token not in labels:
-                            console += get_error(9, token.line_ind, token.symb_ind, code, token=token)
-                            error = 1
-                            cont = 1
-                            break
-                        #
-                        if token.type == "string":
-                            #string too long
-                            if len(token.text) > 3:
-                                console += get_error(11, token.line_ind, token.symb_ind + 1, code, Token(str(len(token.text) - 2)))
-                                cont = 1
-                                error = 1
-                                break
             if cont:
                 continue
         #equ params
@@ -717,19 +697,16 @@ def compile(code):
             for j in range(len(line)):
                 token = line[j]
                 #
-                if type(token) == type([]):
+                if type(token) == type([]):#для db
                     for k in range(len(token)):
-                        if token[k][0].type == "number":#преобразование параметра в число
-                            if len(token[k]) > 1 and token[k][2].type == "number":#если несколько параметров
-                                token[k] = [numbergen([token[k][0], token[k][1], token[k][2]])]
-                            else:
-                                token[k] = [numbergen([token[k][0]])]
-                else:
+                        num = numbergen(token[k])
+                        if num != None:
+                            token[k] = [num]
+                else:#для equ и прочих команд
                     if token.type == "number":#преобразование параметра в число
-                        if j < len(line) - 1 and line[j + 2].type == "number":#если несколько параметров
-                            lines_level2[i] = line[:j] + [numbergen([line[j], line[j + 1], line[j + 2]])]
-                        else:
-                            lines_level2[i] = line[:j] + [numbergen([token])]
+                        num = numbergen(line[j:])
+                        if num != None:
+                            lines_level2[i] = line[:j] + [num]
                         break
         #
         #добавление к ссылкам числового значения equ
@@ -939,14 +916,10 @@ def compile(code):
     return(out, console, 0)
 
 code = '''
-.bank 0
-
-str db "my \\"quoted\\" text", 0, 0
-ldi a, $ + 1
-hlt
-
-.bank 1
-
+gg db 0, 0, 0 + 0
+df equ 1 + 1 + 1
+dff db 1 + 1 + 1, 1 + 1 + 1
+ldi a, 1 + 1 + 1
 '''
 
 #res = compile(code)
