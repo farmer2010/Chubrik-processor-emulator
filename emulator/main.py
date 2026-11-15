@@ -40,7 +40,7 @@ opcodes = [
     "rcl a",  "or b,a",  "or c,a",  "or d,a",  "or a,b",  "rcl b",  "or c,b",  "or d,b",  "or a,c",  "or b,c",  "rcl c",  "or d,c",  "or a,d",  "or b,d",  "or c,d",  "rcl d",
     "rcr a",  "xor b,a", "xor c,a", "xor d,a", "xor a,b", "rcr b",  "xor c,b", "xor d,b", "xor a,c", "xor b,c", "rcr c",  "xor d,c", "xor a,d", "xor b,d", "xor c,d", "rcr d",
     "shl a",  "shl b",   "shl c",   "shl d",   "shr a",   "shr b",  "shr c",   "shr d",   "sar a",   "sar b",   "sar c",  "sar d",   "rnd a",   "rnd b",   "rnd c",   "rnd d",
-    0,        0,         0,         0,         0,         0,        0,         0,         0,         0,         0,        0,         0,         0,         0,         0
+    0,        "cmp b,a", "cmp c,a", "cmp d,a", "cmp a,b", 0,        "cmp c,b", "cmp d,b", "cmp a,c", "cmp b,c", 0,        "cmp d,c", "cmp a,d", "cmp b,d", "cmp c,d", 0
 ]
 
 emu = Emulator()

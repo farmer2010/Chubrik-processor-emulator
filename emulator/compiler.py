@@ -682,7 +682,6 @@ def compile(code):
             if index > 255:
                 index = (index - 128) % 128 + 128
                 bank += 1
-    #print(lines_level2)
     #
     #ОБРАБОТКА EQU
     #
@@ -786,113 +785,158 @@ def compile(code):
     #
     #print(change_data)
     #print(lines_level2)
-    lines_level3 = []
+    out = [0 for x in range(32768)]
     f = 1
+    addr = 0
     for line in lines_level2:
         command = line[0]
         if len(line) >= 2 and line[1] == "db":
             for number in line[2]:
-                lines_level3.append(int(number.text))
+                out[addr] = int(number.text)
+                addr += 1
         if command == ".bank":
             if int(line[1].text) != 0:
                 if f:
                     f = 0
                     console += "\n"
-                console += f"Bank {int(line[1].text) - 1}: {min(int(line[1].text) * 128 - len(lines_level3), 128)} bytes left\n"
-            index = int(line[1].text) * 128
-            lines_level3 += [0] * (index - len(lines_level3))
+                console += f"Bank {int(line[1].text) - 1}: {min(int(line[1].text) * 128 - len(out), 128)} bytes left\n"
+            addr = int(line[1].text) * 128
         if command == "nop":
-            lines_level3.append(0x00)
+            out[addr] = 0x00
+            addr += 1
         elif command == "hlt":
-            lines_level3.append(0x01)
+            out[addr] = 0x01
+            addr += 1
         elif command == "ssp":
-            lines_level3.append(0x02)
+            out[addr] = 0x02
+            addr += 1
         elif command == "jmp":
             if line[1] not in registers:
-                lines_level3.append(0x03)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x03
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x04 + reg_to_num[line[1].text])
+                out[addr] = 0x04 + reg_to_num[line[1].text]
+                addr += 1
         elif command == "jz":
             if line[1] not in registers:
-                lines_level3.append(0x08)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x08
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x10 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x10 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "js":
             if line[1] not in registers:
-                lines_level3.append(0x09)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x09
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x11 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x11 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "jc":
             if line[1] not in registers:
-                lines_level3.append(0x0A)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x0A
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x12 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x12 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "jo":
             if line[1] not in registers:
-                lines_level3.append(0x0B)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x0B
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x13 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x13 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "jnz":
             if line[1] not in registers:
-                lines_level3.append(0x0C)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x0C
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x20 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x20 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "jns":
             if line[1] not in registers:
-                lines_level3.append(0x0D)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x0D
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x21 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x21 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "jnc":
             if line[1] not in registers:
-                lines_level3.append(0x0E)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x0E
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x22 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x22 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "jno":
             if line[1] not in registers:
-                lines_level3.append(0x0F)
-                lines_level3.append(int(line[1].text))
+                out[addr] = 0x0F
+                addr += 1
+                out[addr] = int(line[1].text)
+                addr += 1
             else:
-                lines_level3.append(0x23 + reg_to_num[line[1].text] * 4)
+                out[addr] = 0x23 + reg_to_num[line[1].text] * 4
+                addr += 1
         elif command == "st":
             if line[3] not in registers:
-                lines_level3.append(0x30 + reg_to_num[line[1].text] * 5)
-                lines_level3.append(int(line[3].text))
+                out[addr] = 0x30 + reg_to_num[line[1].text] * 5
+                addr += 1
+                out[addr] = int(line[3].text)
+                addr += 1
             else:
-                lines_level3.append(0x30 + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4)
+                out[addr] = 0x30 + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4
+                addr += 1
         elif command == "ld":
             if line[3] not in registers:
-                lines_level3.append(0x50 + reg_to_num[line[1].text])
-                lines_level3.append(int(line[3].text))
+                out[addr] = 0x50 + reg_to_num[line[1].text]
+                addr += 1
+                out[addr] = int(line[3].text)
+                addr += 1
             else:
-                lines_level3.append(0x40 + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4)
+                out[addr] = 0x40 + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4
+                addr += 1
         elif command == "ldi":
-            lines_level3.append(0x54 + reg_to_num[line[1].text])
-            lines_level3.append(int(line[3].text))
+            out[addr] = 0x54 + reg_to_num[line[1].text]
+            addr += 1
+            out[addr] = int(line[3].text)
+            addr += 1
         elif command.text in cmd1:
-            lines_level3.append(cmd1[command.text] + reg_to_num[line[1].text] * 5)
+            out[addr] = cmd1[command.text] + reg_to_num[line[1].text] * 5
+            addr += 1
         elif command.text in cmd2:
-            lines_level3.append(cmd2[command.text] + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4)
+            out[addr] = cmd2[command.text] + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4
+            addr += 1
         elif command == "shl":
-            lines_level3.append(0xE0 + reg_to_num[line[1].text])
+            out[addr] = 0xE0 + reg_to_num[line[1].text]
+            addr += 1
         elif command == "shr":
-            lines_level3.append(0xE4 + reg_to_num[line[1].text])
+            out[addr] = 0xE4 + reg_to_num[line[1].text]
+            addr += 1
         elif command == "sar":
-            lines_level3.append(0xE8 + reg_to_num[line[1].text])
+            out[addr] = 0xE8 + reg_to_num[line[1].text]
+            addr += 1
         elif command == "rnd":
-            lines_level3.append(0xEC + reg_to_num[line[1].text])
+            out[addr] = 0xEC + reg_to_num[line[1].text]
+            addr += 1
     #
     console += "\n"
     console += "File succesfully compilated\n"
-    console += f"Code length: {len(lines_level3)} bytes"
-    return(lines_level3, console, 0)
+    console += f"Code length: {len(out)} bytes"
+    return(out, console, 0)
 
 code = '''
 .bank 0
