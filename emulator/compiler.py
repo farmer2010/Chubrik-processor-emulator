@@ -309,6 +309,8 @@ def get_error(err_code, line_ind, pos, code, token=Token(" ")):
         res += f"Directive .bank requires a number, not {token}"
     elif err_code == 18:
         res += f"Number must be between 1 and 255, not {token}"
+    elif err_code == 19:
+        res += f"Bank {token} already exists"
     res += "\n\n"
     return(res)
 
@@ -596,6 +598,53 @@ def compile(code):
                     error = 1
                     break
     #
+    if error:
+        return([], console, 1)
+    #
+    banks = []
+    index = 0
+    bank = 0
+    for i in range(len(lines_level2)):
+        command = lines_level2[i]
+        #
+        for j in range(len(command)):
+            token = command[j]
+            if type(token) == type([]):
+                for k in range(len(token)):
+                    index += 1
+                    if index > 255:
+                        index = (index - 128) % 128 + 128
+                        bank += 1
+                        banks.append(bank)
+        #
+        if command[0] in all_commands:
+            index += 1
+            for token in command:
+                if token.type == "unknown" or token.type == "number" or token == "$" or token == "@":
+                    index += 1
+                    break
+            if index > 255:
+                index = (index - 128) % 128 + 128
+                bank += 1
+                banks.append(bank)
+        #
+        if command[0] == ".bank":
+            if len(command) == 1:
+                index = 128
+                bank += 1
+                if bank in banks:
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
+                banks.append(bank)
+            else:
+                bank = int(command[1].text, base=0)
+                index = 128
+                if bank in banks:
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
+                banks.append(bank)
     if error:
         return([], console, 1)
     #
@@ -936,8 +985,10 @@ def compile(code):
     return(out, console, 0)
 
 code = '''
-.bank 0x9 
+.bank 2
+.bank 1
+.bank
 '''
 
-#res = compile(code)
-#print(res[1])
+res = compile(code)
+print(res[1])
