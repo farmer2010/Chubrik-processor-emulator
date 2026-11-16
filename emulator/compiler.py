@@ -305,6 +305,10 @@ def get_error(err_code, line_ind, pos, code, token=Token(" ")):
         res += f"Invalid colon placement"
     elif err_code == 16:
         res += f"Invalid comma placement"
+    elif err_code == 17:
+        res += f"Directive .bank requires a number, not {token}"
+    elif err_code == 18:
+        res += f"Number must be between 1 and 255, not {token}"
     res += "\n\n"
     return(res)
 
@@ -483,6 +487,21 @@ def compile(code):
             console += get_error(2, command[0].line_ind, command[0].symb_ind, code, token=command[0])
             error = 1
             continue
+        #.bank incorrect token
+        if command[0] == ".bank" and (len(command) > 1 and command[1].type != "number"):
+            console += get_error(17, command[1].line_ind, command[1].symb_ind, code, token=command[1])
+            error = 1
+            continue
+        #.bank number < 1 or > 255
+        if command[0] == ".bank" and len(command) == 2 and (int(command[1].text, base=0) <= 0 or int(command[1].text, base=0) > 255):
+            console += get_error(18, command[1].line_ind, command[1].symb_ind, code, token=command[1])
+            error = 1
+            continue
+        #.bank incorrect number of params
+        if command[0] == ".bank" and len(command) > 2:
+            console += get_error(5, command[2].line_ind, command[2].symb_ind, code)
+            error = 1
+            continue
         #command params
         if command[0].type == "command":
             param = []
@@ -626,12 +645,13 @@ def compile(code):
         if len(line) >= 2 and (line[1] == ":" or line[1] == "db"):
             change_data[line[0].text] = str(index)
         #
-        if len(line) == 2 and line[0] == ".bank":
-            bank = int(line[1].text)
-            if eval(line[1].text) != 0:
+        if line[0] == ".bank":
+            if len(line) == 1:
+                bank += 1
                 index = 128
             else:
-                index = 0
+                bank = int(line[1].text, base=0)
+                index = 128
         #
         for j in range(len(line)):
             token = line[j]
@@ -765,19 +785,19 @@ def compile(code):
     out = [0 for x in range(32768)]
     f = 1
     addr = 0
+    laddr = 0
     for line in lines_level2:
         command = line[0]
+        if command == ".bank":
+            if len(line) == 1:
+                addr = (laddr // 128 + 1) * 128
+            else:
+                addr = int(line[1].text) * 128
+        laddr = addr
         if len(line) >= 2 and line[1] == "db":
             for number in line[2]:
-                out[addr] = int(number.text)
+                out[addr] = int(number.text, base=0)
                 addr += 1
-        if command == ".bank":
-            if int(line[1].text) != 0:
-                if f:
-                    f = 0
-                    console += "\n"
-                console += f"Bank {int(line[1].text) - 1}: {min(int(line[1].text) * 128 - len(out), 128)} bytes left\n"
-            addr = int(line[1].text) * 128
         if command == "nop":
             out[addr] = 0x00
             addr += 1
@@ -916,10 +936,7 @@ def compile(code):
     return(out, console, 0)
 
 code = '''
-gg db 0, 0, 0 + 0
-df equ 1 + 1 + 1
-dff db 1 + 1 + 1, 1 + 1 + 1
-ldi a, 1 + 1 + 1
+.bank 0x9 
 '''
 
 #res = compile(code)
