@@ -841,27 +841,41 @@ def compile(code):
     if error2:
         return([], console, 1)
     #
+    #УБИРАЕМ ЛИШНИЕ КОМАНДЫ
+    #
+    coms = []
+    for command in lines_level2:
+        if not(len(command) > 1 and (command[1] == "equ" or command[1] == ":")):
+            coms.append(command)
+    #
     #ФИНАЛЬНОЕ ПРЕОБРАЗОВАНИЕ В БАЙТ - КОД
     #
     #print(change_data)
-    #print(lines_level2)
     out = [0 for x in range(32768)]
+    bl = [-1 for x in range(256)]
     addr = 0
     laddr = 0
     code_length = 0
-    for line in lines_level2:
+    for h in range(len(coms)):
+        line = coms[h]
         command = line[0]
         if command == ".bank":
+            la = addr
             if len(line) == 1:
                 addr = (laddr // 128 + 1) * 128
             else:
                 addr = int(line[1].text) * 128
+            bl[laddr // 128] = laddr // 128 * 128 + 128 - la
         laddr = addr
         if len(line) >= 2 and line[1] == "db":
+            la = addr
             for number in line[2]:
+                la = addr
                 out[addr] = int(number.text, base=0)
                 addr += 1
                 code_length += 1
+            if laddr // 128 != addr // 128 or h == len(coms) - 1:
+                bl[la // 128] = la // 128 * 128 + 128 - addr
         if command == "nop":
             out[addr] = 0x00
             addr += 1
@@ -1025,6 +1039,13 @@ def compile(code):
             out[addr] = 0xEC + reg_to_num[line[1].text]
             addr += 1
             code_length += 1
+        #
+        if (laddr // 128 != addr // 128 or h == len(coms) - 1) and not(len(line) >= 2 and line[1] == "db") and command != ".bank":
+            bl[laddr // 128] = laddr // 128 * 128 + 128 - addr
+    #
+    for i in range(len(bl)):
+        if bl[i] != -1:
+            console += f"Bank {i}: {bl[i]} bytes left\n"
     #
     console += "\n"
     console += "File succesfully compilated\n"
@@ -1032,8 +1053,7 @@ def compile(code):
     return(out, console, 0)
 
 code = '''
-.bank 2
-.bank 1
+.bank 10
 gg db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
@@ -1041,8 +1061,17 @@ gg db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+.bank
+nop
+nop
+.bank
+.bank 1
+g db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
       0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 '''
 
-res = compile(code)
-print(res[1])
+#res = compile(code)
+#print(res[1])

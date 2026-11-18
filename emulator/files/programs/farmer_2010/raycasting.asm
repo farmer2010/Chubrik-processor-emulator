@@ -118,6 +118,7 @@ display_blue db 0b00000000, 0b00000000,
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 1                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+;.bank
 
 cycle:
 ld a, connect
@@ -177,12 +178,13 @@ jnz redraw_cycle
 
 jmp cycle
 
-void1 db 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 
-		 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0
+;void1 db 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 
+;		 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 2                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+.bank
 
 ray_x db 0,0
 ray_y db 0,0
@@ -272,11 +274,12 @@ ldi c, BANK_SIN
 ldi d, ray_return
 jmp change_bank
 
-void2 db 0,0
+;void2 db 0,0
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 3                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+.bank
 
 draw:
 
@@ -386,6 +389,7 @@ jmp change_bank
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 4                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+.bank
 
 division:;a - делимое(частное), b - делитель
 ;c - остаток
@@ -511,11 +515,12 @@ ldi c, BANK_DRAW
 ldi d, set_color_return
 jmp change_bank
 
-void4 db 0,0,0,0,0
+;void4 db 0,0,0,0,0
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 5                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+.bank
 
 ;косинус есть синус, сдвинутый на четверть оборота по x
 cos:;a - angle
@@ -603,11 +608,12 @@ ldi c, BANK_DRAW
 ldi d, draw
 jmp change_bank
 
-void5 db 0,0,0,0,0,0,0,0,0,0, 0,0,0
+;void5 db 0,0,0,0,0,0,0,0,0,0, 0,0,0
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 6                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+.bank
 
 move_up_or_down equ distances + 9
 
@@ -693,11 +699,12 @@ ldi c, BANK_MAIN
 ldi d, start
 jmp change_bank
 
-void6 db 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0
+;void6 db 0,0,0,0,0,0,0,0,0,0, 0,0,0,0,0,0,0,0,0,0, 0,0,0,0
 
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                           БАНК 7                            W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
+.bank
 
 collide_xpos equ buffer + 1
 collide_ypos equ buffer + 3
@@ -805,4 +812,4 @@ movelist db 255,128,   255,128,;left-up
 			255,128,   0,  128;left-down
 
 
-void7 db 0,0,0,0,0,0
+;void7 db 0,0,0,0,0,0
