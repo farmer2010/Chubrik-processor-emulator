@@ -164,6 +164,8 @@ while keep_going:
                 elif menu == "counter":
                     menu = "main"
                 mouse_connect = 0
+            if event.key == pygame.K_F9:
+                emu.toggle_keys = not emu.toggle_keys
             if mods & pygame.KMOD_CTRL:
                 if event.key == pygame.K_o:
                     name = crossfiledialog.open_file(start_dir=os.path.abspath("files/programs/"), filter=["*.asm", "*.txt"])
