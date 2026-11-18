@@ -1,4 +1,4 @@
-import math
+import os
 import crossfiledialog
 from random import randint as rand
 from compiler import *
@@ -556,11 +556,11 @@ class Emulator():
                     if event.key == pygame.K_PLUS or event.key == pygame.K_EQUALS:
                         self.speed = min(self.speed * 2, 10000000)
                     if event.key == pygame.K_s:
-                        filename = crossfiledialog.save_file(start_dir=".\\files\\saves\\", filter=["*.dat"])
+                        filename = crossfiledialog.save_file(start_dir=os.path.abspath("files/saves/"), filter=["*.dat"])
                         if filename != None:
                             self.save_state(filename + ".dat")
                     if event.key == pygame.K_l:
-                        filename = crossfiledialog.open_file(start_dir=".\\files\\saves\\", filter=["*.dat"])
+                        filename = crossfiledialog.open_file(start_dir=os.path.abspath("files/saves/"), filter=["*.dat"])
                         if filename != None:
                             self.load_state(filename)
             if event.type == pygame.KEYUP:

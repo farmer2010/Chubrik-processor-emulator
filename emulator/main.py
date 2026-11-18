@@ -83,6 +83,8 @@ show_panel_button_pos = 600
 console_button_pos = 750
 memory_button_pos = 900
 counter_button_pos = 1050
+save_button_pos = 1200
+load_button_pos = 1350
 
 texts = ["", str(emu.console_w), str(emu.console_h)]
 
@@ -116,6 +118,7 @@ prev_time = 0
 steps = 0
 tps = 0
 while keep_going:
+    mods = pygame.key.get_mods()
     events = pygame.event.get()
     keys = pygame.key.get_pressed()
     for event in events:
@@ -161,6 +164,18 @@ while keep_going:
                 elif menu == "counter":
                     menu = "main"
                 mouse_connect = 0
+            if mods & pygame.KMOD_CTRL:
+                if event.key == pygame.K_o:
+                    name = crossfiledialog.open_file(start_dir=os.path.abspath("files/programs/"), filter=["*.asm", "*.txt"])
+                    if name != None:
+                        if change_console:
+                            change_console = 0
+                            w = int(texts[1]) if len(texts[1]) > 0 else 0
+                            h = int(texts[2]) if len(texts[2]) > 0 else 0
+                            emu.change_console_scale(w, h)
+                        emu.filename = name
+                        pygame.display.set_caption(name.split("\\")[-1] + " - " + emuname)
+                        emu.load()
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -168,7 +183,7 @@ while keep_going:
             if event.button == 1:
                 if mousepos[1] < 30:
                     if mousepos[0] < open_button_pos:
-                        name = crossfiledialog.open_file(start_dir="/files/programs/", filter=["*.asm", "*.txt"])
+                        name = crossfiledialog.open_file(start_dir=os.path.abspath("files/programs/"), filter=["*.asm", "*.txt"])
                         if name != None:
                             if change_console:
                                 change_console = 0
@@ -208,6 +223,14 @@ while keep_going:
                         elif menu == "counter":
                             menu = "main"
                         mouse_connect = 0
+                    elif mousepos[0] < save_button_pos:
+                        filename = crossfiledialog.save_file(start_dir=os.path.abspath("files/saves/"), filter=["*.dat"])
+                        if filename != None:
+                            emu.save_state(filename + ".dat")
+                    elif mousepos[0] < load_button_pos:
+                        filename = crossfiledialog.open_file(start_dir=os.path.abspath("files/saves/"), filter=["*.dat"])
+                        if filename != None:
+                            emu.load_state(filename)
                 #
                 if menu == "console":
                     if mousepos[1] > 30 and mousepos[0] > W - 20:

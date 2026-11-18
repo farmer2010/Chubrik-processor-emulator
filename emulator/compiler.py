@@ -1102,5 +1102,5 @@ add a, a
 inc a
 '''
 
-res = compile(code)
-print(res[1])
+#res = compile(code)
+#print(res[1])
