@@ -13,147 +13,183 @@ reg_to_num = {"a" : 0, "b" : 1, "c" : 2, "d" : 3}
 command_notation = {
     "nop" : {#no, p - param, r - register
         "params" : ["no", "no"],
-        "params_count" : 0
+        "params_count" : 0,
+        "block_double_reg" : 0
     },
     "hlt" : {
         "params" : ["no", "no"],
-        "params_count" : 0
+        "params_count" : 0,
+        "block_double_reg" : 0
     },
     "ssp" : {
         "params" : ["no", "no"],
-        "params_count" : 0
+        "params_count" : 0,
+        "block_double_reg" : 0
     },
     "ld" : {
         "params" : ["r", "r/p"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 0
     },
     "ldi" : {
         "params" : ["r", "p"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 0
     },
     "st" : {
         "params" : ["r", "r/p"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 0
     },
     "jmp" : {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "jz" : {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "js" : {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "jc": {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "jo": {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "jnz": {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "jns": {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "jnc": {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "jno": {
         "params" : ["r/p", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "clr": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "mov": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "and": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "or": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "xor": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "add": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "adc": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "sub": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "sbb": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "cmp": {
         "params" : ["r", "r"],
-        "params_count" : 2
+        "params_count" : 2,
+        "block_double_reg" : 1
     },
     "inc": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "dec": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "not": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "neg": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "test": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "rnd": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "shr": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "shl": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "sar": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "rcr": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     },
     "rcl": {
         "params" : ["r", "no"],
-        "params_count" : 1
+        "params_count" : 1,
+        "block_double_reg" : 0
     }
 }
 
@@ -561,6 +597,15 @@ def compile(code):
                     cont = 1
                     break
             if cont:
+                continue
+            #
+            if command_notation[command[0].text]["params_count"] == 2 and \
+                command_notation[command[0].text]["params"][0] == "r" and \
+                command_notation[command[0].text]["params"][1] == "r" and \
+                command_notation[command[0].text]["block_double_reg"] and \
+                param[0][0].text == param[1][0].text:
+                console += get_error(0, command[0].line_ind, command[0].symb_ind, code, token=f"{command[0].text} {command[1].text}, {command[3].text}")
+                error = 1
                 continue
         #equ params
         if len(command) >= 2 and command[1] == "equ":
@@ -1053,25 +1098,9 @@ def compile(code):
     return(out, console, 0)
 
 code = '''
-.bank 10
-gg db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-.bank
-nop
-nop
-.bank
-.bank 1
-g db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+add a, a
+inc a
 '''
 
-#res = compile(code)
-#print(res[1])
+res = compile(code)
+print(res[1])
