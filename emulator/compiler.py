@@ -601,53 +601,6 @@ def compile(code):
     if error:
         return([], console, 1)
     #
-    banks = []
-    index = 0
-    bank = 0
-    for i in range(len(lines_level2)):
-        command = lines_level2[i]
-        #
-        for j in range(len(command)):
-            token = command[j]
-            if type(token) == type([]):
-                for k in range(len(token)):
-                    index += 1
-                    if index > 255:
-                        index = (index - 128) % 128 + 128
-                        bank += 1
-                        banks.append(bank)
-        #
-        if command[0] in all_commands:
-            index += 1
-            for token in command:
-                if token.type == "unknown" or token.type == "number" or token == "$" or token == "@":
-                    index += 1
-                    break
-            if index > 255:
-                index = (index - 128) % 128 + 128
-                bank += 1
-                banks.append(bank)
-        #
-        if command[0] == ".bank":
-            if len(command) == 1:
-                index = 128
-                bank += 1
-                if bank in banks:
-                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
-                    error = 1
-                    continue
-                banks.append(bank)
-            else:
-                bank = int(command[1].text, base=0)
-                index = 128
-                if bank in banks:
-                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
-                    error = 1
-                    continue
-                banks.append(bank)
-    if error:
-        return([], console, 1)
-    #
     #ОБРАБОТКА СТРОК В DB
     #
     for i in range(len(lines_level2)):
@@ -684,6 +637,67 @@ def compile(code):
                     l[2].append(buff)
                     buff = []
             lines_level2[i] = l
+    #
+    #ПРОВЕРКА ДУБЛИРОВАНИЯ БАНКОВ
+    #
+    banks = []
+    index = 0
+    bank = 0
+    for i in range(len(lines_level2)):
+        command = lines_level2[i]
+        cont = 0
+        #
+        for j in range(len(command)):
+            token = command[j]
+            if type(token) == type([]):
+                for k in range(len(token)):
+                    if index > 255:
+                        index = (index - 128) % 128 + 128
+                        bank += 1
+                        if bank in banks:
+                            console += get_error(19, token[k][0].line_ind, token[k][0].symb_ind, code, token=bank)
+                            error = 1
+                            cont = 1
+                            break
+                        banks.append(bank)
+                    index += 1
+        if cont:
+            continue
+        #
+        if command[0] in all_commands:
+            index += 1
+            for token in command:
+                if token.type == "unknown" or token.type == "number" or token == "$" or token == "@":
+                    index += 1
+                    break
+            if index > 255:
+                index = (index - 128) % 128 + 128
+                bank += 1
+                if bank in banks:
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
+                banks.append(bank)
+        #
+        if command[0] == ".bank":
+            if len(command) == 1:
+                index = 128
+                bank += 1
+                if bank in banks:
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
+                banks.append(bank)
+            else:
+                bank = int(command[1].text, base=0)
+                index = 128
+                if bank in banks:
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
+                banks.append(bank)
+    if error:
+        return ([], console, 1)
     #
     #ОБРАБОТКА ССЫЛОК
     #
@@ -832,9 +846,9 @@ def compile(code):
     #print(change_data)
     #print(lines_level2)
     out = [0 for x in range(32768)]
-    f = 1
     addr = 0
     laddr = 0
+    code_length = 0
     for line in lines_level2:
         command = line[0]
         if command == ".bank":
@@ -847,147 +861,187 @@ def compile(code):
             for number in line[2]:
                 out[addr] = int(number.text, base=0)
                 addr += 1
+                code_length += 1
         if command == "nop":
             out[addr] = 0x00
             addr += 1
+            code_length += 1
         elif command == "hlt":
             out[addr] = 0x01
             addr += 1
+            code_length += 1
         elif command == "ssp":
             out[addr] = 0x02
             addr += 1
+            code_length += 1
         elif command == "jmp":
             if line[1] not in registers:
                 out[addr] = 0x03
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x04 + reg_to_num[line[1].text]
                 addr += 1
+                code_length += 1
         elif command == "jz":
             if line[1] not in registers:
                 out[addr] = 0x08
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x10 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "js":
             if line[1] not in registers:
                 out[addr] = 0x09
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x11 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "jc":
             if line[1] not in registers:
                 out[addr] = 0x0A
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x12 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "jo":
             if line[1] not in registers:
                 out[addr] = 0x0B
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x13 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "jnz":
             if line[1] not in registers:
                 out[addr] = 0x0C
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x20 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "jns":
             if line[1] not in registers:
                 out[addr] = 0x0D
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x21 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "jnc":
             if line[1] not in registers:
                 out[addr] = 0x0E
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x22 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "jno":
             if line[1] not in registers:
                 out[addr] = 0x0F
                 addr += 1
                 out[addr] = int(line[1].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x23 + reg_to_num[line[1].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "st":
             if line[3] not in registers:
                 out[addr] = 0x30 + reg_to_num[line[1].text] * 5
                 addr += 1
                 out[addr] = int(line[3].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x30 + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "ld":
             if line[3] not in registers:
                 out[addr] = 0x50 + reg_to_num[line[1].text]
                 addr += 1
                 out[addr] = int(line[3].text)
                 addr += 1
+                code_length += 2
             else:
                 out[addr] = 0x40 + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4
                 addr += 1
+                code_length += 1
         elif command == "ldi":
             out[addr] = 0x54 + reg_to_num[line[1].text]
             addr += 1
             out[addr] = int(line[3].text)
             addr += 1
+            code_length += 2
         elif command.text in cmd1:
             out[addr] = cmd1[command.text] + reg_to_num[line[1].text] * 5
             addr += 1
+            code_length += 1
         elif command.text in cmd2:
             out[addr] = cmd2[command.text] + reg_to_num[line[1].text] + reg_to_num[line[3].text] * 4
             addr += 1
+            code_length += 1
         elif command == "shl":
             out[addr] = 0xE0 + reg_to_num[line[1].text]
             addr += 1
+            code_length += 1
         elif command == "shr":
             out[addr] = 0xE4 + reg_to_num[line[1].text]
             addr += 1
+            code_length += 1
         elif command == "sar":
             out[addr] = 0xE8 + reg_to_num[line[1].text]
             addr += 1
+            code_length += 1
         elif command == "rnd":
             out[addr] = 0xEC + reg_to_num[line[1].text]
             addr += 1
+            code_length += 1
     #
     console += "\n"
     console += "File succesfully compilated\n"
-    console += f"Code length: {len(out)} bytes"
+    console += f"Code length: {code_length} bytes"
     return(out, console, 0)
 
 code = '''
 .bank 2
 .bank 1
-.bank
+gg db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+      0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
 '''
 
 res = compile(code)
