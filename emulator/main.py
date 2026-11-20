@@ -3,45 +3,16 @@ from emulator import *
 import time
 import pygame
 import crossfiledialog
+from constant import *
 pygame.mixer.pre_init()
 pygame.init()
 
 pygame.mixer.set_num_channels(1000)
 
-W = pygame.display.Info().current_w
-H = pygame.display.Info().current_h
-
-emuname = "Emulator v1.3"
-
 screen = pygame.display.set_mode((W, H), pygame.FULLSCREEN)
 pygame.display.set_caption(emuname)
 keep_going = 1
 timer = pygame.time.Clock()
-
-font16 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 16)
-font15 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 15)
-font14 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 14)
-progfont = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 13)
-font_alert = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 32)
-
-opcodes = [
-    "nop",    "hlt",     "ssp",     "jmp",     "jmp a",   "jmp b",  "jmp c",   "jmp d",   "jz",      "js",      "jc",     "jo",      "jnz",     "jns",     "jnc",     "jno",
-    "jz a",   "js a",    "jc a",    "jo a",    "jz b",    "js b",   "jc b",    "jo b",    "jz c",    "js c",    "jc c",   "jo c",    "jz d",    "js d",    "jc d",    "jo d",
-    "jnz a",  "jns a",   "jnc a",   "jno a",   "jnz b",   "jns b",  "jnc b",   "jno b",   "jnz c",   "jns c",   "jnc c",  "jno c",   "jnz d",   "jns d",   "jnc d",   "jno d",
-    "st a",   "st b,a",  "st c,a",  "st d,a",  "st a,b",  "st b",   "st c,b",  "st d,b",  "st a,c",  "st b,c",  "st c",   "st d,c",  "st a,d",  "st b,d",  "st c,d",  "st d",
-    "ld a,a", "ld b,a",  "ld c,a",  "ld d,a",  "ld a,b",  "ld b,b", "ld c,b",  "ld d,b",  "ld a,c",  "ld b,c",  "ld c,c", "ld d,c",  "ld a,d",  "ld b,d",  "ld c,d",  "ld d,d",
-    "ld a",   "ld b",    "ld c",    "ld d",    "ldi a",   "ldi b",  "ldi c",   "ldi d",   0,         0,         0,        0,         0,         0,         0,         0,
-    "inc a",  "add b,a", "add c,a", "add d,a", "add a,b", "inc b",  "add c,b", "add d,b", "add a,c", "add b,c", "inc c",  "add d,c", "add a,d", "add b,d", "add c,d", "inc d",
-    "dec a",  "sub b,a", "sub c,a", "sub d,a", "sub a,b", "dec b",  "sub c,b", "sub d,b", "sub a,c", "sub b,c", "dec c",  "sub d,c", "sub a,d", "sub b,d", "sub c,d", "dec d",
-    "not a",  "adc b,a", "adc c,a", "adc d,a", "adc a,b", "not b",  "adc c,b", "adc d,b", "adc a,c", "adc b,c", "not c",  "adc d,c", "adc a,d", "adc b,d", "adc c,d", "not d",
-    "neg a",  "sbb b,a", "sbb c,a", "sbb d,a", "sbb a,b", "neg b",  "sbb c,b", "sbb d,b", "sbb a,c", "sbb b,c", "neg c",  "sbb d,c", "sbb a,d", "sbb b,d", "sbb c,d", "neg d",
-    "clr a",  "mov b,a", "mov c,a", "mov d,a", "mov a,b", "clr b",  "mov c,b", "mov d,b", "mov a,c", "mov b,c", "clr c",  "mov d,c", "mov a,d", "mov b,d", "mov c,d", "clr d",
-    "test a", "and b,a", "and c,a", "and d,a", "and a,b", "test b", "and c,b", "and d,b", "and a,c", "and b,c", "test c", "and d,c", "and a,d", "and b,d", "and c,d", "test d",
-    "rcl a",  "or b,a",  "or c,a",  "or d,a",  "or a,b",  "rcl b",  "or c,b",  "or d,b",  "or a,c",  "or b,c",  "rcl c",  "or d,c",  "or a,d",  "or b,d",  "or c,d",  "rcl d",
-    "rcr a",  "xor b,a", "xor c,a", "xor d,a", "xor a,b", "rcr b",  "xor c,b", "xor d,b", "xor a,c", "xor b,c", "rcr c",  "xor d,c", "xor a,d", "xor b,d", "xor c,d", "rcr d",
-    "shl a",  "shl b",   "shl c",   "shl d",   "shr a",   "shr b",  "shr c",   "shr d",   "sar a",   "sar b",   "sar c",  "sar d",   "rnd a",   "rnd b",   "rnd c",   "rnd d",
-    0,        "cmp b,a", "cmp c,a", "cmp d,a", "cmp a,b", 0,        "cmp c,b", "cmp d,b", "cmp a,c", "cmp b,c", 0,        "cmp d,c", "cmp a,d", "cmp b,d", "cmp c,d", 0
-]
 
 emu = Emulator()
 
@@ -76,6 +47,15 @@ bank_img.fill((255, 0, 0))
 bank_img.set_colorkey((0, 0, 0))
 pygame.draw.rect(bank_img, (0, 0, 0), (4, 4, 92, 898))
 
+left_button_img_enabled = get_button_image(80, 80, 0, color=(180, 180, 180))
+render_text("<", (40, 40), left_button_img_enabled, centerx="center", centery="center", font=font48)
+right_button_img_enabled = get_button_image(80, 80, 0, color=(180, 180, 180))
+render_text(">", (40, 40), right_button_img_enabled, centerx="center", centery="center", font=font48)
+left_button_img_disabled = get_button_image(80, 80, 1, color=(90, 90, 90))
+render_text("<", (40, 40), left_button_img_disabled, centerx="center", centery="center", font=font48)
+right_button_img_disabled = get_button_image(80, 80, 1, color=(90, 90, 90))
+render_text(">", (40, 40), right_button_img_disabled, centerx="center", centery="center", font=font48)
+
 open_button_pos = 150
 restart_button_pos = 300
 pause_button_pos = 450
@@ -87,6 +67,7 @@ save_button_pos = 1200
 load_button_pos = 1350
 
 texts = ["", str(emu.console_w), str(emu.console_h)]
+page = 0
 
 def get_param_text(i):
     if i == 0:
@@ -176,8 +157,15 @@ while keep_going:
                             h = int(texts[2]) if len(texts[2]) > 0 else 0
                             emu.change_console_scale(w, h)
                         emu.filename = name
-                        pygame.display.set_caption(name.split("\\")[-1] + " - " + emuname)
                         emu.load()
+                if event.key == pygame.K_LEFT:
+                    page -= 1
+                    if page < 0:
+                        page = 0
+                if event.key == pygame.K_RIGHT:
+                    page += 1
+                    if page > 15:
+                        page = 15
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:
@@ -193,7 +181,6 @@ while keep_going:
                                 h = int(texts[2]) if len(texts[2]) > 0 else 0
                                 emu.change_console_scale(w, h)
                             emu.filename = name
-                            pygame.display.set_caption(name.split("\\")[-1] + " - " + emuname)
                             emu.load()
                     elif mousepos[0] < restart_button_pos:
                         if change_console:
@@ -234,14 +221,7 @@ while keep_going:
                         if filename != None:
                             emu.load_state(filename)
                 #
-                if menu == "console":
-                    if mousepos[1] > 30 and mousepos[0] > W - 20:
-                        lenlines = len(emu.compilation_console.split("\n"))
-                        if lenlines > (H - 40) // 20:
-                            h = min(1, (H - 40) // 20 / lenlines) * (H - 30)
-                            m_y = (mousepos[1] - 30 - h/2) / (H - 30 - h)
-                            console_scroll = max(0, int(lenlines * m_y))
-                elif menu == "main" and draw_panel:
+                if menu == "main" and draw_panel:
                     if mousepos[0] > 10 and mousepos[0] < 160:
                         if mousepos[1] > 250 and mousepos[1] < 280:
                             mouse_connect = 1
@@ -258,6 +238,21 @@ while keep_going:
                         mouse_connect = 0
                     if mousepos[0] > 140 and mousepos[0] < 170 and mousepos[1] > 400 and mousepos[1] < 430:
                         emu.toggle_keys = not emu.toggle_keys
+                elif menu == "console":
+                    if mousepos[1] > 30 and mousepos[0] > W - 20:
+                        lenlines = len(emu.compilation_console.split("\n"))
+                        if lenlines > (H - 40) // 20:
+                            h = min(1, (H - 40) // 20 / lenlines) * (H - 30)
+                            m_y = (mousepos[1] - 30 - h/2) / (H - 30 - h)
+                            console_scroll = max(0, int(lenlines * m_y))
+                elif menu == "memory":#(W / 2 + 10, H - 90), (W / 2 - 90, H - 90) 80*80
+                    if mousepos[1] > H - 90 and mousepos[1] < H - 10 and mousepos[0] > W / 2 - 90 and mousepos[0] < W / 2 + 90:
+                        if mousepos[0] < W / 2 - 10:#left button
+                            if page > 0:
+                                page -= 1
+                        elif mousepos[0] > W / 2 + 10:
+                            if page < 15:
+                                page += 1
     #
     #ОБНОВЛЕНИЕ
     #
@@ -347,18 +342,23 @@ while keep_going:
             lpos += 1
     elif menu == "memory":
         for j in range(16):
+            bank = page * 16 + j
             for i in range(64):
                 ind = i * 2 + 128 * (j > 0)
-                if (emu.index == ind or emu.index == ind + 1) and (emu.bank == j or (j == 0 and ind < 128)):
+                if (emu.index == ind or emu.index == ind + 1) and (emu.bank == bank or (bank == 0 and ind < 128)):
                     h = emu.index - ind
                     pygame.draw.rect(screen, (255, 160, 64), (j * 110 + 160 * (j >= 8) + 10, 14 * i + 90 - 1, 20, 14))
                     pygame.draw.rect(screen, (255, 100, 128), (j * 110 + 160 * (j >= 8) + 50 + 30 * h, 14 * i + 90 - 1, 20, 14))
                 render_text(f"{ind:02X}:", (j * 110 + 40 + 160 * (j >= 8), 14 * i + 90), screen, font=progfont, centerx="right", color=(128, 128, 128))
-                render_text(f"    {emu.memory[j * 128 + i * 2]:02X} {emu.memory[j * 128 + i * 2 + 1]:02X}", ((i // 64) * 90 + j * 110 + 160 * (j >= 8) + 10, 14 * i + 90), screen, font=progfont)
-            render_text(f"bank {j}" if j > 0 else "common", (j * 110 + 160 * (j >= 8) + 20, 1000), screen, font=progfont)
+                render_text(f"    {emu.memory[bank * 128 + i * 2]:02X} {emu.memory[bank * 128 + i * 2 + 1]:02X}", ((i // 64) * 90 + j * 110 + 160 * (j >= 8) + 10, 14 * i + 90), screen, font=progfont)
+            render_text(f"bank {bank}" if bank > 0 else "common", (j * 110 + 160 * (j >= 8) + 20, 1000), screen, font=progfont)
         #
-        b = emu.bank
-        screen.blit(bank_img, (b * 110 + 160 * (b >= 8) + 5, 84))
+        b = emu.bank % 16
+        if emu.bank >= page * 16 and emu.bank < page * 16 + 16:
+            screen.blit(bank_img, (b * 110 + 160 * (b >= 8) + 5, 84))
+        screen.blit(right_button_img_enabled if page < 15 else right_button_img_disabled, (W / 2 + 10, H - 90))
+        screen.blit(left_button_img_enabled if page > 0 else left_button_img_disabled, (W / 2 - 90, H - 90))
+        render_text(f"page {page}", (W / 2 - 40, H - 120), screen, font=font16)
     elif menu == "counter":
         gp = lambda x, y: (W / 2 - 800 + (x * 200 + 30) + 10, H / 2 - 400 + 16 * y)
         gpp = lambda x, y: (W / 2 - 800 + (x * 200 + 40) + 10, H / 2 - 400 + 16 * y)

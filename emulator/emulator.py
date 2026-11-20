@@ -3,29 +3,9 @@ import crossfiledialog
 from random import randint as rand
 from compiler import *
 from utils import *
+from constant import *
 import pygame
 pygame.init()
-
-W = pygame.display.Info().current_w
-H = pygame.display.Info().current_h
-
-A = 0
-B = 1
-C = 2
-D = 3
-
-z = 0
-s = 1
-c = 2
-o = 3
-
-texture = pygame.image.load("files/fonts/font.png")
-
-sound = pygame.mixer.Sound("files/sound/Powerup5.wav")
-
-font80 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 80)
-font48 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 48)
-font32 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 32)
 
 def get_symbol(ind, scale=8):
     img = pygame.Surface((6, 8))
@@ -165,6 +145,7 @@ class Emulator():
         self.opers_types_count = [0 for x in range(256)]
 
     def load(self):
+        pygame.display.set_caption(self.filename.split("\\")[-1] + " - " + emuname)
         self.clear()
         if not self.invalid_console_scale:
             if self.filename != "":
@@ -259,6 +240,7 @@ class Emulator():
 
     def load_state(self, filename):
         self.clear()
+        pygame.display.set_caption(filename.split("\\")[-1] + " - " + emuname)
         #
         CW_IND = 0
         CH_IND = 1
