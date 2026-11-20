@@ -344,7 +344,7 @@ while keep_going:
         for j in range(16):
             bank = page * 16 + j
             for i in range(64):
-                ind = i * 2 + 128 * (j > 0)
+                ind = i * 2 + 128 * (bank > 0)
                 if (emu.index == ind or emu.index == ind + 1) and (emu.bank == bank or (bank == 0 and ind < 128)):
                     h = emu.index - ind
                     pygame.draw.rect(screen, (255, 160, 64), (j * 110 + 160 * (j >= 8) + 10, 14 * i + 90 - 1, 20, 14))
