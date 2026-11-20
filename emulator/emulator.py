@@ -73,6 +73,7 @@ class Emulator():
         self.stop = 0#была ли программа остановлена
         self.breakpoint = 0
         self.pause = 1
+        self.version = 2
         #
         self.reg = [0, 0, 0, 0]#регистры
         self.flags = [0, 0, 0, 0]#флаги

@@ -35,10 +35,17 @@ render_text("CONSOLE WIDTH:", (5, 260), left_buttons_img, font=font14)
 left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 280))
 render_text("CONSOLE HEIGHT:", (5, 320), left_buttons_img, font=font14)
 left_buttons_img.blit(get_text_box_image(150, 30, color=(160, 160, 160)), (10, 340))
-render_text("TOGGLE KEYS:", (5, 380), left_buttons_img, font=font14)
-left_buttons_img.blit(get_text_box_image(30, 30, color=(160, 160, 160)), (140, 370))
+render_text("TOGGLE KEYS", (40, 380), left_buttons_img, font=font14)
+left_buttons_img.blit(get_text_box_image(24, 24, color=(160, 160, 160)), (10, 373))
+render_text("SELECT EMULATOR:", (5, 410), left_buttons_img, font=font14)
+render_text("(Change will clear the", (5, 430), left_buttons_img, font=font14)
+render_text("emulator state)", (5, 450), left_buttons_img, font=font14)
+render_text("computer v1", (40, 480), left_buttons_img, font=font14)
+left_buttons_img.blit(get_text_box_image(24, 24, color=(160, 160, 160)), (10, 474))
+render_text("computer v2", (40, 510), left_buttons_img, font=font14)
+left_buttons_img.blit(get_text_box_image(24, 24, color=(160, 160, 160)), (10, 504))
 
-radiobutton_img = get_button_image(24, 24, 0, color=(180, 180, 180))
+radiobutton_img = get_button_image(18, 18, 0, color=(180, 180, 180))
 
 console_background = get_text_box_image(W - 20, H - 30, color=(180, 180, 180))
 
@@ -236,7 +243,7 @@ while keep_going:
                             mouse_connect = 0
                     else:
                         mouse_connect = 0
-                    if mousepos[0] > 140 and mousepos[0] < 170 and mousepos[1] > 400 and mousepos[1] < 430:
+                    if mousepos[0] > 10 and mousepos[0] < 34 and mousepos[1] > 403 and mousepos[1] < 427:
                         emu.toggle_keys = not emu.toggle_keys
                 elif menu == "console":
                     if mousepos[1] > 30 and mousepos[0] > W - 20:
@@ -324,7 +331,7 @@ while keep_going:
                     pygame.draw.rect(screen, (0, 0, 0), (20 + 11 * len(get_param_text(mouse_connect - 1)), 256 + 60 * (mouse_connect - 1), 2, 18))
             #
             if emu.toggle_keys:
-                screen.blit(radiobutton_img, (143, 403))
+                screen.blit(radiobutton_img, (13, 406))
     elif menu == "console":
         screen.blit(console_background, (0, 30))
         lines = emu.compilation_console.split("\n")

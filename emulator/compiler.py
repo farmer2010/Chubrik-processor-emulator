@@ -347,6 +347,8 @@ def get_error(err_code, line_ind, pos, code, token=Token(" ")):
         res += f"Number must be between 1 and 255, not {token}"
     elif err_code == 19:
         res += f"Bank {token} already exists"
+    elif err_code == 20:
+        res += f"Memory overflow: bank {token} > 255"
     res += "\n\n"
     return(res)
 
@@ -704,6 +706,11 @@ def compile(code):
                             error = 1
                             cont = 1
                             break
+                        if bank > 255:
+                            console += get_error(20, token[k][0].line_ind, token[k][0].symb_ind, code, token=bank)
+                            error = 1
+                            cont = 1
+                            break
                         banks.append(bank)
                     index += 1
         if cont:
@@ -722,6 +729,10 @@ def compile(code):
                     console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
                     error = 1
                     continue
+                if bank > 255:
+                    console += get_error(20, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
                 banks.append(bank)
         #
         if command[0] == ".bank":
@@ -732,12 +743,20 @@ def compile(code):
                     console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
                     error = 1
                     continue
+                if bank > 255:
+                    console += get_error(20, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
                 banks.append(bank)
             else:
                 bank = int(command[1].text, base=0)
                 index = 128
                 if bank in banks:
                     console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    error = 1
+                    continue
+                if bank > 255:
+                    console += get_error(20, command[0].line_ind, command[0].symb_ind, code, token=bank)
                     error = 1
                     continue
                 banks.append(bank)
@@ -1098,9 +1117,17 @@ def compile(code):
     return(out, console, 0)
 
 code = '''
-add a, a
-inc a
+.bank 255
+f db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
+     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
+nop
 '''
 
-#res = compile(code)
-#print(res[1])
+res = compile(code)
+print(res[1])
