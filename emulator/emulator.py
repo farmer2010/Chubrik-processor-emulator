@@ -151,23 +151,16 @@ class Emulator():
         if not self.invalid_console_scale:
             if self.filename != "":
                 #
-                try:
-                    file = open(self.filename, encoding="utf-8")#загрузка программы
-                    txt = file.read()
-                    file.close()
-                except:
-                    self.file_not_found = 1
-                    self.compilation_console = f'File "{self.filename}":\nFile not found'
-                if not self.file_not_found:
-                    res = compile(txt)
-                    code = res[0]
-                    self.compilation_console = f'File "{self.filename}":\n' + res[1]
-                    if res[2]:
-                        self.compilation_error = 1
-                    for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
-                        self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
-                        if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
-                            self.update_ports(i, code[i])
+                res = compile(self.filename)
+                code = res[0]
+                #self.compilation_console = f'File "{self.filename}":\n' + res[1]
+                self.compilation_console = res[1]
+                if res[2]:
+                    self.compilation_error = 1
+                for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
+                    self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
+                    if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
+                        self.update_ports(i, code[i])
 
     def change_console_scale(self, w, h):
         if w != 0 and h != 0:
@@ -582,8 +575,11 @@ class Emulator():
         if not self.pause or one_step:
             #
             old_ticks = self.tick_count
-            self.tick_count += self.speed / fps
-            speed = min(int(self.tick_count) - int(old_ticks), 50000)
+            if fps > 0.05:
+                self.tick_count += self.speed / fps
+                speed = min(int(self.tick_count) - int(old_ticks), 50000)
+            else:
+                speed = 0
             #
             for i in range(speed if one_step == 0 else 1):
                 if self.toggle_keys and self.toggle_key != 0:

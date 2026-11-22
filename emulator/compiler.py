@@ -1,6 +1,9 @@
+import math
+from pathlib import Path
+
 spaces = [" ", "\n", "\t", chr(65279)]
 symb = [",", ":", "-", "+", "$", "@"]
-words = ["db", "equ", ".bank"]
+words = ["db", "equ", ".bank", ".include"]
 all_commands = ["nop", "hlt", "ssp", "ld", "ldi", "st", "jmp", "jz", "js", "jc", "jo", "jnz", "jns", "jnc", "jno", "clr", "mov", "and", "or", "xor", "add", "adc", "sub", "sbb", "cmp", "test", "inc", "dec", "not", "neg", "rnd", "shl", "shr", "sar", "rcl", "rcr"]
 cmd1 = {"inc" : 0x60, "dec" : 0x70, "not" : 0x80, "neg" : 0x90, "clr" : 0xA0, "test" : 0xB0, "rcl" : 0xC0, "rcr" : 0xD0}
 cmd2 = {"add" : 0x60, "sub" : 0x70, "adc" : 0x80, "sbb" : 0x90, "mov" : 0xA0, "and" : 0xB0, "or" : 0xC0, "xor" : 0xD0, "cmp" : 0xF0}
@@ -352,9 +355,16 @@ def get_error(err_code, line_ind, pos, code, token=Token(" ")):
     res += "\n\n"
     return(res)
 
-def compile(code):
-    #
+def tokenise(filename):
     console = ""
+    code = ""
+    try:
+        file = open(filename, "r", encoding="utf-8")
+        code = file.read()
+        file.close()
+    except:
+        console += f"File {filename} not found"
+        return ([], console, 1)
     #
     #ТОКЕНАЙЗЕР
     #
@@ -433,14 +443,16 @@ def compile(code):
         #
         if (token_type == "word" and (next_symbol in spaces or next_symbol in symb)) or \
                 (token_type == "special symbol" and not buffer + next_symbol in symb) or \
-                ((token_type == "string" and (symbol == "'" or symbol == '"') and txt == None) or next_symbol == "\n") or \
+                ((token_type == "string" and (
+                        symbol == "'" or symbol == '"') and txt == None) or next_symbol == "\n") or \
                 (token_type == "number" and (next_symbol in spaces or next_symbol in symb)) or \
                 i == len(code) - 1:
             token_type = None
             if buffer != "":
                 if buffer == "db":
                     db = 1
-                elif db and len(line) > 0 and line[-1] != "," and line[-1] != "db" and line[-1] != "-" and line[-1] != "+" and buffer != ",":
+                elif db and len(line) > 0 and line[-1] != "," and line[-1] != "db" and line[-1] != "-" and line[
+                    -1] != "+" and buffer != ",":
                     if buffer != "-" and buffer != "+":
                         line = []
                         lines_level1.append(Token("__end__", line_ind, curpos))
@@ -502,8 +514,11 @@ def compile(code):
         cont = 0
         command = lines_level2[i]
         #неизвестная команда
-        if command[0] != ".bank" and (command[0].type == "unknown" and ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or
-            (command[0].type != "command" and command[0].type != "unknown")):
+        if command[0] != ".bank" and command[0] != ".include" and (
+                command[0].type == "unknown" and
+                ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or
+                (command[0].type != "command" and command[0].type != "unknown")
+        ):
             console += get_error(0, command[0].line_ind, command[0].symb_ind, code, token=command[0])
             error = 1
             continue
@@ -518,7 +533,8 @@ def compile(code):
             error = 1
             continue
         #incorrect label name
-        if len(command) == 2 and (command[1] == ":" or command[1] == "equ" or command[1] == "db") and command[0].type != "unknown":
+        if len(command) == 2 and (command[1] == ":" or command[1] == "equ" or command[1] == "db") and command[
+            0].type != "unknown":
             console += get_error(1, command[0].line_ind, command[0].symb_ind, code, token=command[0])
             error = 1
             continue
@@ -533,7 +549,8 @@ def compile(code):
             error = 1
             continue
         #.bank number < 1 or > 255
-        if command[0] == ".bank" and len(command) == 2 and (int(command[1].text, base=0) <= 0 or int(command[1].text, base=0) > 255):
+        if command[0] == ".bank" and len(command) == 2 and (
+                int(command[1].text, base=0) <= 0 or int(command[1].text, base=0) > 255):
             console += get_error(18, command[1].line_ind, command[1].symb_ind, code, token=command[1])
             error = 1
             continue
@@ -563,7 +580,7 @@ def compile(code):
                         error = 1
                         cont = 1
                         break
-                    #empty parameter
+                    # empty parameter
                     if buffer == []:
                         console += get_error(6, token.line_ind, token.symb_ind - 1, code)
                         error = 1
@@ -602,14 +619,15 @@ def compile(code):
                 continue
             #
             if command_notation[command[0].text]["params_count"] == 2 and \
-                command_notation[command[0].text]["params"][0] == "r" and \
-                command_notation[command[0].text]["params"][1] == "r" and \
-                command_notation[command[0].text]["block_double_reg"] and \
-                param[0][0].text == param[1][0].text:
-                console += get_error(0, command[0].line_ind, command[0].symb_ind, code, token=f"{command[0].text} {command[1].text}, {command[3].text}")
+                    command_notation[command[0].text]["params"][0] == "r" and \
+                    command_notation[command[0].text]["params"][1] == "r" and \
+                    command_notation[command[0].text]["block_double_reg"] and \
+                    param[0][0].text == param[1][0].text:
+                console += get_error(0, command[0].line_ind, command[0].symb_ind, code,
+                                     token=f"{command[0].text} {command[1].text}, {command[3].text}")
                 error = 1
                 continue
-        #equ params
+        # equ params
         if len(command) >= 2 and command[1] == "equ":
             param = command[2:]
             res = test_param(param, "p", code, labels)
@@ -617,7 +635,7 @@ def compile(code):
                 console += res[0]
                 error = 1
                 continue
-        #db params
+        # db params
         if len(command) >= 2 and command[1] == "db":
             params = []
             buffer = []
@@ -658,17 +676,19 @@ def compile(code):
                 token = line[j]
                 if token.type == "string":
                     for k in range(1, len(token.text) - 1):
-                        l.append(Token(str(int.from_bytes(token.text[k].encode("cp1251"))), line_ind=token.line_ind, symb_ind=token.symb_ind))
+                        l.append(Token(str(int.from_bytes(token.text[k].encode("cp1251"))), line_ind=token.line_ind,
+                                       symb_ind=token.symb_ind))
                         if k < len(token.text) - 2:
                             l.append(Token(","))
                 else:
                     l.append(token)
             lines_level2[i] = l
-        elif len(line) >= 2 and line[1] != "db":
+        elif len(line) >= 2 and line[1] != "db" and line[0] != ".include":
             for j in range(len(line)):
                 token = line[j]
                 if token.type == "string":
-                    line[j] = Token(str(int.from_bytes(token.text[1].encode("cp1251"))), line_ind=token.line_ind, symb_ind=token.symb_ind)
+                    line[j] = Token(str(int.from_bytes(token.text[1].encode("cp1251"))), line_ind=token.line_ind,
+                                    symb_ind=token.symb_ind)
     #
     #ПРЕОБРАЗОВАНИЕ DB
     #
@@ -761,14 +781,52 @@ def compile(code):
                     continue
                 banks.append(bank)
     if error:
-        return ([], console, 1)
+        return([], console, 1)
+    #
+    #.include
+    #
+    out = lines_level2.copy()
+    for i in range(len(lines_level2)):
+        line = lines_level2[i]
+        if line[0] == ".include":
+            res = tokenise(str(Path(filename).parent) + "\\" + line[1].text[1:-1])
+            console += res[1]
+            if res[2]:
+                return([], console, 1)
+            out += res[0]
+    return(out, console, 0)
+
+
+
+
+def compile(filename):
+    code = ""
+    try:
+        file = open(filename, "r", encoding="utf-8")
+        code = file.read()
+        file.close()
+    except:
+        pass
+    console = ""
+    t = "Restart: " + filename
+    console += f"=={"=" * max(len(t), 100)}==\n"
+    console += f"=={" " * int(50 - len(t) / 2)}{t}{" " * math.ceil(50 - len(t) / 2)}==\n"
+    console += f"=={"=" * max(len(t), 100)}==\n\n"
+    #
+    #ТОКЕНАЙЗЕР И ПРЕПРОЦЕССОР
+    #
+    res = tokenise(filename)
+    commands = res[0]
+    console += res[1]
+    if res[2]:
+        return([], console, 1)
     #
     #ОБРАБОТКА ССЫЛОК
     #
     change_data = {}
     index = 0
     bank = 0
-    for line in lines_level2:
+    for line in commands:
         if len(line) >= 2 and (line[1] == ":" or line[1] == "db"):
             change_data[line[0].text] = str(index)
         #
@@ -812,7 +870,7 @@ def compile(code):
     #
     #ОБРАБОТКА EQU
     #
-    for line in lines_level2:
+    for line in commands:
         if len(line) == 3 and line[1] == "equ" and line[2].type == "number":
             change_data[line[0].text] = str(eval(line[2].text))
     #
@@ -822,8 +880,8 @@ def compile(code):
         #
         #замена меток на числа
         #
-        for i in range(len(lines_level2)):
-            line = lines_level2[i]
+        for i in range(len(commands)):
+            line = commands[i]
             for j in range(len(line)):
                 token = line[j]
                 if type(token) != type([]):#если не массив
@@ -839,8 +897,8 @@ def compile(code):
         #
         #преобразование арифметических операций
         #
-        for i in range(len(lines_level2)):
-            line = lines_level2[i]
+        for i in range(len(commands)):
+            line = commands[i]
             for j in range(len(line)):
                 token = line[j]
                 #
@@ -853,19 +911,19 @@ def compile(code):
                     if token.type == "number":#преобразование параметра в число
                         num = numbergen(line[j:])
                         if num != None:
-                            lines_level2[i] = line[:j] + [num]
+                            commands[i] = line[:j] + [num]
                         break
         #
         #добавление к ссылкам числового значения equ
         #
-        for line in lines_level2:
+        for line in commands:
             if len(line) == 3 and line[1] == "equ" and line[2].type == "number":
                 change_data[line[0].text] = str(eval(line[2].text))
     #
     #РАСКРЫВАЕМ СКОБКИ
     #
-    for i in range(len(lines_level2)):
-        line = lines_level2[i]
+    for i in range(len(commands)):
+        line = commands[i]
         for j in range(len(line)):
             token = line[j]
             if type(token) == type([]) and j == 2:
@@ -873,16 +931,16 @@ def compile(code):
                     l = [line[0], line[1]]
                     for k in range(len(token)):
                         l.append(token[k][0])
-                    lines_level2[i] = l
+                    commands[i] = l
                 elif line[1] == "db":
                     l = [line[0], line[1], []]
                     for k in range(len(token)):
                         l[2].append(token[k][0])
-                    lines_level2[i] = l
+                    commands[i] = l
     #
     #ПЕРЕВОД СТРОК В ЧИСЛА
     #
-    for line in lines_level2:
+    for line in commands:
         for i in range(len(line)):
             token = line[i]
             if type(token) != type([]) and token.type == "number":
@@ -890,8 +948,8 @@ def compile(code):
     #
     #ПРОВЕРКА ЧИСЕЛ НА ДОПУСТИМЫЙ ДИАПАЗОН
     #
-    error2 = 0
-    for line in lines_level2:
+    error = 0
+    for line in commands:
         for token in line:
             if type(token) != type([]):
                 if token.type == "number" and (eval(token.text) > 255 or eval(token.text) < 0):
@@ -902,13 +960,13 @@ def compile(code):
                     if tk.type == "number" and (eval(tk.text) > 255 or eval(tk.text) < 0):
                         console += get_error(14, tk.line_ind, tk.symb_ind, code, token=token)
                         error2 = 1
-    if error2:
+    if error:
         return([], console, 1)
     #
     #УБИРАЕМ ЛИШНИЕ КОМАНДЫ
     #
     coms = []
-    for command in lines_level2:
+    for command in commands:
         if not(len(command) > 1 and (command[1] == "equ" or command[1] == ":")):
             coms.append(command)
     #
@@ -1116,18 +1174,6 @@ def compile(code):
     console += f"Code length: {code_length} bytes"
     return(out, console, 0)
 
-code = '''
-.bank 255
-f db 0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-     0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-nop
-'''
-
-res = compile(code)
-print(res[1])
+if __name__ == "__main__":
+    res = compile("D:/projects/chuemu/emulator/files/programs/farmer_2010/test.asm")
+    print(res[1])
