@@ -352,6 +352,8 @@ def get_error(err_code, line_ind, pos, code, token=Token(" ")):
         res += f"Bank {token} already exists"
     elif err_code == 20:
         res += f"Memory overflow: bank {token} > 255"
+    elif err_code == 21:
+        res += f"Data overflow from bank {token} to next bank"
     res += "\n\n"
     return(res)
 
@@ -991,9 +993,13 @@ def compile(filename):
         laddr = addr
         if len(line) >= 2 and line[1] == "db":
             la = addr
-            for number in line[2]:
+            for n in range(len(line[2])):
+                number = line[2][n]
                 la = addr
                 out[addr] = int(number.text, base=0)
+                if addr // 128 != (addr + 1) // 128 and n != len(line[2]) - 1:
+                    console += get_error(21, number.line_ind, number.symb_ind, code, addr//128)
+                    return([], console, 1)
                 addr += 1
                 code_length += 1
             if laddr // 128 != addr // 128 or h == len(coms) - 1:
