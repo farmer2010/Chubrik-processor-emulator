@@ -502,9 +502,50 @@ def tokenise(filename):
                 error = 1
                 continue
     #
+    #.include
+    #
+    out = lines_level2.copy()
+    for i in range(len(lines_level2)):
+        line = lines_level2[i]
+        if line[0] == ".include":
+            res = tokenise(str(Path(filename).parent) + "\\" + line[1].text[1:-1])
+            console += res[1]
+            if res[2]:
+                return([], console, 1)
+            out += res[0]
+    return(out, console, error)
+
+
+
+
+def compile(filename):
+    code = ""
+    try:
+        file = open(filename, "r", encoding="utf-8")
+        code = file.read()
+        file.close()
+    except:
+        pass
+    console = ""
+    t = "Restart: " + filename
+    console += f"=={"=" * max(len(t), 100)}==\n"
+    console += f"=={" " * int(50 - len(t) / 2)}{t}{" " * math.ceil(50 - len(t) / 2)}==\n"
+    console += f"=={"=" * max(len(t), 100)}==\n\n"
+    #
+    #ТОКЕНАЙЗЕР И ПРЕПРОЦЕССОР
+    #
+    res = tokenise(filename)
+    commands = res[0]
+    console += res[1]
+    if res[2]:
+        return([], console, 1)
+    #
+    #ПРОВЕРКА СИНТАКСИСА
+    #
+    error = 0
     labels = []
-    for i in range(len(lines_level2)):#проверка дублирования меток
-        command = lines_level2[i]
+    for i in range(len(commands)):#проверка дублирования меток
+        command = commands[i]
         if len(command) >= 2 and (command[1] == ":" or command[1] == "equ" or command[1] == "db"):
             if command[0].text in labels:
                 console += get_error(3, command[0].line_ind, command[0].symb_ind, code, token=command[0])
@@ -512,9 +553,9 @@ def tokenise(filename):
             else:
                 labels.append(command[0].text)
     #
-    for i in range(len(lines_level2)):
+    for i in range(len(commands)):
         cont = 0
-        command = lines_level2[i]
+        command = commands[i]
         #неизвестная команда
         if command[0] != ".bank" and command[0] != ".include" and (
                 command[0].type == "unknown" and
@@ -582,7 +623,7 @@ def tokenise(filename):
                         error = 1
                         cont = 1
                         break
-                    # empty parameter
+                    #empty parameter
                     if buffer == []:
                         console += get_error(6, token.line_ind, token.symb_ind - 1, code)
                         error = 1
@@ -629,7 +670,7 @@ def tokenise(filename):
                                      token=f"{command[0].text} {command[1].text}, {command[3].text}")
                 error = 1
                 continue
-        # equ params
+        #equ params
         if len(command) >= 2 and command[1] == "equ":
             param = command[2:]
             res = test_param(param, "p", code, labels)
@@ -637,7 +678,7 @@ def tokenise(filename):
                 console += res[0]
                 error = 1
                 continue
-        # db params
+        #db params
         if len(command) >= 2 and command[1] == "db":
             params = []
             buffer = []
@@ -670,8 +711,8 @@ def tokenise(filename):
     #
     #ОБРАБОТКА СТРОК В DB
     #
-    for i in range(len(lines_level2)):
-        line = lines_level2[i]
+    for i in range(len(commands)):
+        line = commands[i]
         if len(line) > 2 and line[1] == "db":
             l = [line[0], line[1]]
             for j in range(2, len(line)):
@@ -684,7 +725,7 @@ def tokenise(filename):
                             l.append(Token(","))
                 else:
                     l.append(token)
-            lines_level2[i] = l
+            commands[i] = l
         elif len(line) >= 2 and line[1] != "db" and line[0] != ".include":
             for j in range(len(line)):
                 token = line[j]
@@ -694,8 +735,8 @@ def tokenise(filename):
     #
     #ПРЕОБРАЗОВАНИЕ DB
     #
-    for i in range(len(lines_level2)):
-        line = lines_level2[i]
+    for i in range(len(commands)):
+        line = commands[i]
         if len(line) > 2 and line[1] == "db":
             l = [line[0], line[1], []]
             buff = []
@@ -705,15 +746,15 @@ def tokenise(filename):
                 if line[j] == "," or j == len(line) - 1:
                     l[2].append(buff)
                     buff = []
-            lines_level2[i] = l
+            commands[i] = l
     #
     #ПРОВЕРКА ДУБЛИРОВАНИЯ БАНКОВ
     #
     banks = []
     index = 0
     bank = 0
-    for i in range(len(lines_level2)):
-        command = lines_level2[i]
+    for i in range(len(commands)):
+        command = commands[i]
         cont = 0
         #
         for j in range(len(command)):
@@ -783,44 +824,6 @@ def tokenise(filename):
                     continue
                 banks.append(bank)
     if error:
-        return([], console, 1)
-    #
-    #.include
-    #
-    out = lines_level2.copy()
-    for i in range(len(lines_level2)):
-        line = lines_level2[i]
-        if line[0] == ".include":
-            res = tokenise(str(Path(filename).parent) + "\\" + line[1].text[1:-1])
-            console += res[1]
-            if res[2]:
-                return([], console, 1)
-            out += res[0]
-    return(out, console, 0)
-
-
-
-
-def compile(filename):
-    code = ""
-    try:
-        file = open(filename, "r", encoding="utf-8")
-        code = file.read()
-        file.close()
-    except:
-        pass
-    console = ""
-    t = "Restart: " + filename
-    console += f"=={"=" * max(len(t), 100)}==\n"
-    console += f"=={" " * int(50 - len(t) / 2)}{t}{" " * math.ceil(50 - len(t) / 2)}==\n"
-    console += f"=={"=" * max(len(t), 100)}==\n\n"
-    #
-    #ТОКЕНАЙЗЕР И ПРЕПРОЦЕССОР
-    #
-    res = tokenise(filename)
-    commands = res[0]
-    console += res[1]
-    if res[2]:
         return([], console, 1)
     #
     #ОБРАБОТКА ССЫЛОК
@@ -956,12 +959,12 @@ def compile(filename):
             if type(token) != type([]):
                 if token.type == "number" and (eval(token.text) > 255 or eval(token.text) < 0):
                     console += get_error(14, token.line_ind, token.symb_ind, code, token=token)
-                    error2 = 1
+                    error = 1
             else:
                 for tk in token:
                     if tk.type == "number" and (eval(tk.text) > 255 or eval(tk.text) < 0):
                         console += get_error(14, tk.line_ind, tk.symb_ind, code, token=token)
-                        error2 = 1
+                        error = 1
     if error:
         return([], console, 1)
     #

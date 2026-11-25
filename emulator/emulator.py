@@ -508,24 +508,25 @@ class Emulator():
                         b = 1
                         self.breakpoint = 0
                     #
-                    try:
-                        key = int.from_bytes(event.unicode.encode("cp1251"))
-                    except:
-                        pass
-                    if event.key == pygame.K_LEFT:
-                        key = 0x11
-                    elif event.key == pygame.K_UP:
-                        key = 0x12
-                    elif event.key == pygame.K_RIGHT:
-                        key = 0x13
-                    elif event.key == pygame.K_DOWN:
-                        key = 0x14
-                    elif event.key == pygame.K_RETURN:
-                        key = 0x0A
-                    elif event.key == pygame.K_TAB:
-                        key = 0x09
-                    if event.key == pygame.K_BACKSPACE:
-                        key = 0x08
+                    if event.key != pygame.K_ESCAPE:
+                        try:
+                            key = int.from_bytes(event.unicode.encode("cp1251"))
+                        except:
+                            pass
+                        if event.key == pygame.K_LEFT:
+                            key = 0x11
+                        elif event.key == pygame.K_UP:
+                            key = 0x12
+                        elif event.key == pygame.K_RIGHT:
+                            key = 0x13
+                        elif event.key == pygame.K_DOWN:
+                            key = 0x14
+                        elif event.key == pygame.K_RETURN:
+                            key = 0x0A
+                        elif event.key == pygame.K_TAB:
+                            key = 0x09
+                        if event.key == pygame.K_BACKSPACE:
+                            key = 0x08
                 else:
                     if event.key == pygame.K_MINUS:
                         self.speed = int(self.speed / 2)
