@@ -20,13 +20,12 @@ up_buttons_img = pygame.Surface((W, 30))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="open", font=font16), (0, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="restart", font=font16), (150, 0))
 up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="pause", font=font16), (300, 0))
-up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="show panel", font=font16), (450, 0))
-up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="console", font=font16), (600, 0))
-up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="show memory", font=font16), (750, 0))
-up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="counter", font=font16), (900, 0))
-up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="save state", font=font16), (1050, 0))
-up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="load state", font=font16), (1200, 0))
-up_buttons_img.blit(get_button_image(W - 1350, 30, 0, color=(180, 180, 180)), (1350, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="console", font=font16), (450, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="show memory", font=font16), (600, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="counter", font=font16), (750, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="save state", font=font16), (900, 0))
+up_buttons_img.blit(get_button_image(150, 30, 0, color=(180, 180, 180), text="load state", font=font16), (1050, 0))
+up_buttons_img.blit(get_button_image(W - 1200, 30, 0, color=(180, 180, 180)), (1200, 0))
 
 left_buttons_img = get_button_image(300, H - 30, 0, color=(180, 180, 180))
 render_text("SPEED:", (5, 200), left_buttons_img, font=font14)
@@ -63,15 +62,20 @@ render_text("<", (40, 40), left_button_img_disabled, centerx="center", centery="
 right_button_img_disabled = get_button_image(80, 80, 1, color=(90, 90, 90))
 render_text(">", (40, 40), right_button_img_disabled, centerx="center", centery="center", font=font48)
 
+small_left_button_img = get_button_image(28, 25, 0, color=(180, 180, 180))
+render_text("<", (14, 13), small_left_button_img, centerx="center", centery="center", font=font16)
+small_right_button_img = get_button_image(25, 25, 0, color=(180, 180, 180))
+render_text(">", (13, 13), small_right_button_img, centerx="center", centery="center", font=font16)
+
+
 open_button_pos = 150
 restart_button_pos = 300
 pause_button_pos = 450
-show_panel_button_pos = 600
-console_button_pos = 750
-memory_button_pos = 900
-counter_button_pos = 1050
-save_button_pos = 1200
-load_button_pos = 1350
+console_button_pos = 600
+memory_button_pos = 750
+counter_button_pos = 900
+save_button_pos = 1050
+load_button_pos = 1200
 
 texts = ["", str(emu.console_w), str(emu.console_h)]
 page = 0
@@ -198,9 +202,6 @@ while keep_going:
                         emu.load()
                     elif mousepos[0] < pause_button_pos:
                         emu.pause = not emu.pause
-                    elif mousepos[0] < show_panel_button_pos:
-                        draw_panel = not draw_panel
-                        mouse_connect = 0
                     elif mousepos[0] < console_button_pos:
                         if menu != "console":
                             menu = "console"
@@ -228,23 +229,33 @@ while keep_going:
                         if filename != None:
                             emu.load_state(filename)
                 #
-                if menu == "main" and draw_panel:
-                    if mousepos[0] > 10 and mousepos[0] < 160:
-                        if mousepos[1] > 250 and mousepos[1] < 280:
-                            mouse_connect = 1
-                            cursor_timer = 0
-                        elif mousepos[1] > 310 and mousepos[1] < 340:
-                            mouse_connect = 2
-                            cursor_timer = 0
-                        elif mousepos[1] > 370 and mousepos[1] < 400:
-                            mouse_connect = 3
-                            cursor_timer = 0
+                if menu == "main":
+                    if draw_panel:
+                        if mousepos[0] > 10 and mousepos[0] < 160:
+                            if mousepos[1] > 250 and mousepos[1] < 280:
+                                mouse_connect = 1
+                                cursor_timer = 0
+                            elif mousepos[1] > 310 and mousepos[1] < 340:
+                                mouse_connect = 2
+                                cursor_timer = 0
+                            elif mousepos[1] > 370 and mousepos[1] < 400:
+                                mouse_connect = 3
+                                cursor_timer = 0
+                            else:
+                                mouse_connect = 0
                         else:
                             mouse_connect = 0
+                        if mousepos[0] > 10 and mousepos[0] < 34 and mousepos[1] > 403 and mousepos[1] < 427:
+                            emu.toggle_keys = not emu.toggle_keys
+                            mouse_connect = 0
+                        #
+                        if mousepos[0] > 300 and mousepos[0] < 325 and mousepos[1] > 80 and mousepos[1] < 105:
+                            mouse_connect = 0
+                            draw_panel = 0
                     else:
-                        mouse_connect = 0
-                    if mousepos[0] > 10 and mousepos[0] < 34 and mousepos[1] > 403 and mousepos[1] < 427:
-                        emu.toggle_keys = not emu.toggle_keys
+                        if mousepos[0] > 0 and mousepos[0] < 25 and mousepos[1] > 80 and mousepos[1] < 105:
+                            mouse_connect = 0
+                            draw_panel = 1
                 elif menu == "console":
                     if mousepos[1] > 30 and mousepos[0] > W - 20:
                         lenlines = len(emu.compilation_console.split("\n"))
@@ -297,7 +308,10 @@ while keep_going:
     if menu == "main":
         emu.draw(screen)
         if draw_panel:
+            screen.blit(small_left_button_img, (297, 80))
             screen.blit(left_buttons_img, (0, 30))
+        else:
+            screen.blit(small_right_button_img, (0, 80))
         #
         render_text(f"fps: {fps}", (5, 40), screen, font=font14)
         render_text(f"tps: {round(tps, 1)}", (5, 60), screen, font=font14)

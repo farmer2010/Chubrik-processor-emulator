@@ -1,1 +1,3 @@
+ldi a, ff
+
 hlt

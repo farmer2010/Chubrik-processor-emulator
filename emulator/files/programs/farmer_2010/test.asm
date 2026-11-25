@@ -3,6 +3,8 @@
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 .include "test2.asm"
 
+ff equ 32
+
 .bank 1
 ldi a, 3
 ldi b, 2

@@ -9,6 +9,7 @@ H = pygame.display.Info().current_h
 font80 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 80)
 font48 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 48)
 font32 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 32)
+font24 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 24)
 font16 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 16)
 font15 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 15)
 font14 = pygame.font.Font("files/fonts/Better VCR 6.1.ttf", 14)
