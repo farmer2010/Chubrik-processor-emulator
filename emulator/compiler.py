@@ -198,10 +198,11 @@ command_notation = {
 
 
 class Token():
-    def __init__(self, txt, line_ind=0, symb_ind=0):
+    def __init__(self, txt, line_ind=0, symb_ind=0, filename=""):
         self.text = txt
         self.line_ind = line_ind
         self.symb_ind = symb_ind
+        self.filename = filename
         if len(txt) == 0:
             self.type = "null"
         elif txt[0] in numbers or ((len(txt) >= 2) and txt[0] == "-" and txt[1] in numbers):
@@ -246,8 +247,8 @@ def numbergen(tokens):
         elif tokens[1] == "-":
             out = number1 - number2
         out %= 256
-        tokens = [Token(str(out), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind)] + tokens[3:]
-    return(Token(str(int(tokens[0].text, base=0)), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind))
+        tokens = [Token(str(out), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind, filename=tokens[0].filename)] + tokens[3:]
+    return(Token(str(int(tokens[0].text, base=0)), line_ind=tokens[0].line_ind, symb_ind=tokens[0].symb_ind, filename=tokens[0].filename))
 
 def is_number(token):
     return(token.type == "number" or token.type == "string" or token == "$" or token == "@" or token.type == "unknown")
@@ -278,32 +279,41 @@ def test_param(param, target_param_types, code, labels, max_string_len=1):
                 (len(param) == 1 and is_number(param[0])) or
                 (len(param) > 1 and test_param_syntax(param))
             ))):
-        console_changes += get_error(8, param[0].line_ind, param[0].symb_ind, code)
+        console_changes += get_error(8, param[0].line_ind, param[0].symb_ind, param[0].filename)
         return(console_changes, 1)
     #invalid param syntax
     if param != [] and param_type not in target_param_types:
         if param_type == "no":
-            console_changes += get_error(8, param[0].line_ind, param[0].symb_ind, code)
+            console_changes += get_error(8, param[0].line_ind, param[0].symb_ind, param[0].filename)
         else:
-            console_changes += get_error(7, param[0].line_ind, param[0].symb_ind, code, token=Token("register") if param_type == "r" else Token("expression"))
+            console_changes += get_error(7, param[0].line_ind, param[0].symb_ind, param[0].filename,
+                                         token=Token("register") if param_type == "r" else Token("expression"))
         return(console_changes, 1)
     #
     if param_type == "p":
         for token in param:
             #unknown label
             if token.type == "unknown" and token not in labels:
-                console_changes += get_error(9, token.line_ind, token.symb_ind, code, token=token)
+                console_changes += get_error(9, token.line_ind, token.symb_ind, token.filename, token=token)
                 return(console_changes, 1)
             #
             if token.type == "string":
                 #string too long
                 if len(token.text) - 2 > max_string_len or len(token.text) - 2 <= 0:
-                    console_changes += get_error(11, token.line_ind, token.symb_ind + 1, code, Token(str(len(token.text) - 2)))
+                    console_changes += get_error(11, token.line_ind, token.symb_ind + 1, token.filename,
+                                                 token=Token(str(len(token.text) - 2)))
                     return(console_changes, 1)
     return("", 0)
 
-def get_error(err_code, line_ind, pos, code, token=Token(" ")):
-    res = f"Syntax error (code {err_code}) on line {line_ind}:\n"
+def get_error(err_code, line_ind, pos, filename, token=Token(" ")):
+    file = open(filename, "r")
+    code = file.read()
+    file.close()
+    #
+    if err_code != 22 and err_code != 23:
+        res = f"Syntax error in file \"{filename}\" on line {line_ind}:\n"
+    else:
+        res = f"Error in file \"{filename}\" on line {line_ind}:\n"
     res += code.split("\n")[line_ind].replace("\t", "    ") + "\n"
     t = 0
     for symb in code.split("\n")[line_ind]:
@@ -353,11 +363,15 @@ def get_error(err_code, line_ind, pos, code, token=Token(" ")):
     elif err_code == 20:
         res += f"Memory overflow: bank {token} > 255"
     elif err_code == 21:
-        res += f"Data overflow from bank {token} to next bank"
+        res += f"Data overflow foiom bank {token} to next bank"
+    elif err_code == 22:
+        res += f"File \"{token}\" was included earlier\n"
+    elif err_code == 23:
+        res += f"File \"{token}\" not found"
     res += "\n\n"
     return(res)
 
-def tokenise(filename):
+def tokenise(filename, files):
     console = ""
     code = ""
     try:
@@ -365,8 +379,8 @@ def tokenise(filename):
         code = file.read()
         file.close()
     except:
-        console += f"File {filename} not found"
-        return ([], console, 1)
+        console += f"File \"{filename}\" not found"
+        return([], console, 1)
     #
     #ТОКЕНАЙЗЕР
     #
@@ -445,26 +459,24 @@ def tokenise(filename):
         #
         if (token_type == "word" and (next_symbol in spaces or next_symbol in symb)) or \
                 (token_type == "special symbol" and not buffer + next_symbol in symb) or \
-                ((token_type == "string" and (
-                        symbol == "'" or symbol == '"') and txt == None) or next_symbol == "\n") or \
+                ((token_type == "string" and (symbol == "'" or symbol == '"') and txt == None) or next_symbol == "\n") or \
                 (token_type == "number" and (next_symbol in spaces or next_symbol in symb)) or \
                 i == len(code) - 1:
             token_type = None
             if buffer != "":
                 if buffer == "db":
                     db = 1
-                elif db and len(line) > 0 and line[-1] != "," and line[-1] != "db" and line[-1] != "-" and line[
-                    -1] != "+" and buffer != ",":
+                elif db and len(line) > 0 and line[-1] != "," and line[-1] != "db" and line[-1] != "-" and line[-1] != "+" and buffer != ",":
                     if buffer != "-" and buffer != "+":
                         line = []
-                        lines_level1.append(Token("__end__", line_ind, curpos))
+                        lines_level1.append(Token("__end__", line_ind, curpos, filename))
                         db = 0
-                lines_level1.append(Token(buffer, line_ind, curpos))
+                lines_level1.append(Token(buffer, line_ind, curpos, filename))
                 line.append(Token(buffer))
                 buffer = ""
         if len(line) > 0 and db == 0 and (symbol == "\n" or line[-1] == ":"):
             line = []
-            lines_level1.append(Token("__end__", line_ind, curpos))
+            lines_level1.append(Token("__end__", line_ind, curpos, filename))
     #
     #ОБЪЕДИНЕНИЕ ТОКЕНОВ В КОМАНДЫ
     #
@@ -487,18 +499,18 @@ def tokenise(filename):
             try:
                 eval(token.text)
             except:
-                console += get_error(13, token.line_ind, token.symb_ind, code)
+                console += get_error(13, token.line_ind, token.symb_ind, token.filename)
                 error = 1
                 continue
         elif token.type == "string":
             #string not closed
             if token.text[-1] != "'" and token.text[-1] != '"' or len(token.text) < 2:
-                console += get_error(12, token.line_ind, token.symb_ind + len(token.text), code)
+                console += get_error(12, token.line_ind, token.symb_ind + len(token.text), token.filename)
                 error = 1
                 continue
             #empty string
             if len(token.text) == 2:
-                console += get_error(10, token.line_ind, token.symb_ind, code)
+                console += get_error(10, token.line_ind, token.symb_ind, token.filename)
                 error = 1
                 continue
     #
@@ -508,11 +520,23 @@ def tokenise(filename):
     for i in range(len(lines_level2)):
         line = lines_level2[i]
         if line[0] == ".include":
-            res = tokenise(str(Path(filename).parent) + "\\" + line[1].text[1:-1])
-            console += res[1]
-            if res[2]:
+            patch = str(Path(filename).parent) + "\\" + line[1].text[1:-1]
+            if patch not in files:
+                try:
+                    file = open(patch, encoding="utf-8")
+                    file.close()
+                except:
+                    console += get_error(23, line[1].line_ind, line[1].symb_ind, line[1].filename, token=line[1].text[1:-1])
+                    return([], console, 1)
+                files.append(patch)
+                res = tokenise(patch, files)
+                console += res[1]
+                if res[2]:
+                    return([], console, 1)
+                out += res[0]
+            else:
+                console += get_error(22, line[1].line_ind, line[1].symb_ind, line[1].filename, token=line[1].text[1:-1])
                 return([], console, 1)
-            out += res[0]
     return(out, console, error)
 
 
@@ -534,7 +558,7 @@ def compile(filename):
     #
     #ТОКЕНАЙЗЕР И ПРЕПРОЦЕССОР
     #
-    res = tokenise(filename)
+    res = tokenise(filename, [filename])
     commands = res[0]
     console += res[1]
     if res[2]:
@@ -548,7 +572,7 @@ def compile(filename):
         command = commands[i]
         if len(command) >= 2 and (command[1] == ":" or command[1] == "equ" or command[1] == "db"):
             if command[0].text in labels:
-                console += get_error(3, command[0].line_ind, command[0].symb_ind, code, token=command[0])
+                console += get_error(3, command[0].line_ind, command[0].symb_ind, command[0].filename, token=command[0])
                 error = 1
             else:
                 labels.append(command[0].text)
@@ -562,44 +586,44 @@ def compile(filename):
                 ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or
                 (command[0].type != "command" and command[0].type != "unknown")
         ):
-            console += get_error(0, command[0].line_ind, command[0].symb_ind, code, token=command[0])
+            console += get_error(0, command[0].line_ind, command[0].symb_ind, command[0].filename, token=command[0])
             error = 1
             continue
         #двоеточие в конце строки
         if command[-1] == ":" and command[0].type != "unknown":
-            console += get_error(15, command[-1].line_ind, command[-1].symb_ind, code)
+            console += get_error(15, command[-1].line_ind, command[-1].symb_ind, command[-1].filename)
             error = 1
             continue
         #запятая в конце строки
         if command[-1] == ",":
-            console += get_error(16, command[-1].line_ind, command[-1].symb_ind, code)
+            console += get_error(16, command[-1].line_ind, command[-1].symb_ind, command[-1].filename)
             error = 1
             continue
         #incorrect label name
         if len(command) == 2 and (command[1] == ":" or command[1] == "equ" or command[1] == "db") and command[
             0].type != "unknown":
-            console += get_error(1, command[0].line_ind, command[0].symb_ind, code, token=command[0])
+            console += get_error(1, command[0].line_ind, command[0].symb_ind, command[0].filename, token=command[0])
             error = 1
             continue
         #expected label name
         if command[0] == ":" or command[0] == "equ" or command[0] == "db":
-            console += get_error(2, command[0].line_ind, command[0].symb_ind, code, token=command[0])
+            console += get_error(2, command[0].line_ind, command[0].symb_ind, command[0].filename, token=command[0])
             error = 1
             continue
         #.bank incorrect token
         if command[0] == ".bank" and (len(command) > 1 and command[1].type != "number"):
-            console += get_error(17, command[1].line_ind, command[1].symb_ind, code, token=command[1])
+            console += get_error(17, command[1].line_ind, command[1].symb_ind, command[0].filename, token=command[1])
             error = 1
             continue
         #.bank number < 1 or > 255
         if command[0] == ".bank" and len(command) == 2 and (
                 int(command[1].text, base=0) <= 0 or int(command[1].text, base=0) > 255):
-            console += get_error(18, command[1].line_ind, command[1].symb_ind, code, token=command[1])
+            console += get_error(18, command[1].line_ind, command[1].symb_ind, command[1].filename, token=command[1])
             error = 1
             continue
         #.bank incorrect number of params
         if command[0] == ".bank" and len(command) > 2:
-            console += get_error(5, command[2].line_ind, command[2].symb_ind, code)
+            console += get_error(5, command[2].line_ind, command[2].symb_ind, command[2].filename)
             error = 1
             continue
         #command params
@@ -608,7 +632,8 @@ def compile(filename):
             buffer = []
             p_ind = 0
             if len(command) == 1 and command_notation[command[0].text]["params_count"] > 0:
-                console += get_error(5, command[0].line_ind, command[0].symb_ind + len(command[0].text), code)
+                console += get_error(5, command[0].line_ind, command[0].symb_ind + len(command[0].text),
+                                     command[0].filename)
                 error = 1
                 break
             for j in range(1, len(command)):
@@ -619,13 +644,13 @@ def compile(filename):
                 if token == "," or j == len(command) - 1:
                     p_ind += 1
                     if p_ind > command_notation[command[0].text]["params_count"]:
-                        console += get_error(5, token.line_ind, token.symb_ind, code)
+                        console += get_error(5, token.line_ind, token.symb_ind, token.filename)
                         error = 1
                         cont = 1
                         break
                     #empty parameter
                     if buffer == []:
-                        console += get_error(6, token.line_ind, token.symb_ind - 1, code)
+                        console += get_error(6, token.line_ind, token.symb_ind - 1, token.filename)
                         error = 1
                         cont = 1
                         break
@@ -634,7 +659,7 @@ def compile(filename):
                     buffer = []
                     #
                     if token == "," and j == len(command) - 1:
-                        console += get_error(6, token.line_ind, token.symb_ind + 1, code)
+                        console += get_error(6, token.line_ind, token.symb_ind + 1, token.filename)
                         error = 1
                         cont = 1
                         break
@@ -666,7 +691,7 @@ def compile(filename):
                     command_notation[command[0].text]["params"][1] == "r" and \
                     command_notation[command[0].text]["block_double_reg"] and \
                     param[0][0].text == param[1][0].text:
-                console += get_error(0, command[0].line_ind, command[0].symb_ind, code,
+                console += get_error(0, command[0].line_ind, command[0].symb_ind, command[0].filename,
                                      token=f"{command[0].text} {command[1].text}, {command[3].text}")
                 error = 1
                 continue
@@ -695,7 +720,7 @@ def compile(filename):
                 token = command[i]
                 next_token = command[i + 1] if i < len(command) - 1 else ""
                 if token == "," and next_token == ",":
-                    console += get_error(16, token.line_ind, token.symb_ind, code)
+                    console += get_error(16, token.line_ind, token.symb_ind, token.filename)
                     error = 1
                     break
             #
@@ -719,8 +744,7 @@ def compile(filename):
                 token = line[j]
                 if token.type == "string":
                     for k in range(1, len(token.text) - 1):
-                        l.append(Token(str(int.from_bytes(token.text[k].encode("cp1251"))), line_ind=token.line_ind,
-                                       symb_ind=token.symb_ind))
+                        l.append(Token(str(int.from_bytes(token.text[k].encode("cp1251"))), line_ind=token.line_ind, symb_ind=token.symb_ind, filename=token.filename))
                         if k < len(token.text) - 2:
                             l.append(Token(","))
                 else:
@@ -730,8 +754,7 @@ def compile(filename):
             for j in range(len(line)):
                 token = line[j]
                 if token.type == "string":
-                    line[j] = Token(str(int.from_bytes(token.text[1].encode("cp1251"))), line_ind=token.line_ind,
-                                    symb_ind=token.symb_ind)
+                    line[j] = Token(str(int.from_bytes(token.text[1].encode("cp1251"))), line_ind=token.line_ind, symb_ind=token.symb_ind, filename=token.filename)
     #
     #ПРЕОБРАЗОВАНИЕ DB
     #
@@ -765,12 +788,12 @@ def compile(filename):
                         index = (index - 128) % 128 + 128
                         bank += 1
                         if bank in banks:
-                            console += get_error(19, token[k][0].line_ind, token[k][0].symb_ind, code, token=bank)
+                            console += get_error(19, token[k][0].line_ind, token[k][0].symb_ind, token[k][0].filename, token=bank)
                             error = 1
                             cont = 1
                             break
                         if bank > 255:
-                            console += get_error(20, token[k][0].line_ind, token[k][0].symb_ind, code, token=bank)
+                            console += get_error(20, token[k][0].line_ind, token[k][0].symb_ind, token[k][0].filename, token=bank)
                             error = 1
                             cont = 1
                             break
@@ -789,11 +812,11 @@ def compile(filename):
                 index = (index - 128) % 128 + 128
                 bank += 1
                 if bank in banks:
-                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, command[0].filename, token=bank)
                     error = 1
                     continue
                 if bank > 255:
-                    console += get_error(20, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    console += get_error(20, command[0].line_ind, command[0].symb_ind, command[0].filename, token=bank)
                     error = 1
                     continue
                 banks.append(bank)
@@ -803,11 +826,11 @@ def compile(filename):
                 index = 128
                 bank += 1
                 if bank in banks:
-                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, command[0].filename, token=bank)
                     error = 1
                     continue
                 if bank > 255:
-                    console += get_error(20, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    console += get_error(20, command[0].line_ind, command[0].symb_ind, command[0].filename, token=bank)
                     error = 1
                     continue
                 banks.append(bank)
@@ -815,11 +838,11 @@ def compile(filename):
                 bank = int(command[1].text, base=0)
                 index = 128
                 if bank in banks:
-                    console += get_error(19, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    console += get_error(19, command[0].line_ind, command[0].symb_ind, command[0].filename, token=bank)
                     error = 1
                     continue
                 if bank > 255:
-                    console += get_error(20, command[0].line_ind, command[0].symb_ind, code, token=bank)
+                    console += get_error(20, command[0].line_ind, command[0].symb_ind, command[0].filename, token=bank)
                     error = 1
                     continue
                 banks.append(bank)
@@ -846,18 +869,18 @@ def compile(filename):
         for j in range(len(line)):
             token = line[j]
             if token == "$":
-                line[j] = Token(str(index), line_ind=token.line_ind, symb_ind=token.symb_ind)
+                line[j] = Token(str(index), line_ind=token.line_ind, symb_ind=token.symb_ind, filename=token.filename)
             elif token == "@":
-                line[j] = Token(str(bank), line_ind=token.line_ind, symb_ind=token.symb_ind)
+                line[j] = Token(str(bank), line_ind=token.line_ind, symb_ind=token.symb_ind, filename=token.filename)
             elif type(token) == type([]):
                 for k in range(len(token)):
                     param = token[k]
                     for h in range(len(param)):
                         tk = param[h]
                         if tk == "$":
-                            param[h] = Token(str(index), line_ind=tk.line_ind, symb_ind=tk.symb_ind)
+                            param[h] = Token(str(index), line_ind=tk.line_ind, symb_ind=tk.symb_ind, filename=token.filename)
                         elif tk == "@":
-                            param[h] = Token(str(bank), line_ind=tk.line_ind, symb_ind=tk.symb_ind)
+                            param[h] = Token(str(bank), line_ind=tk.line_ind, symb_ind=tk.symb_ind, filename=token.filename)
                     index += 1
                     if index > 255:
                         index = (index - 128) % 128 + 128
@@ -892,13 +915,13 @@ def compile(filename):
                 if type(token) != type([]):#если не массив
                     if j != 0:
                         if token.text in change_data:
-                            line[j] = Token(change_data[token.text], line_ind=token.line_ind, symb_ind=token.symb_ind)
+                            line[j] = Token(change_data[token.text], line_ind=token.line_ind, symb_ind=token.symb_ind, filename=token.filename)
                 else:
                     for param in token:
                         for k in range(len(param)):
                             tk = param[k]
                             if tk.text in change_data:
-                                param[k] = Token(change_data[tk.text], line_ind=tk.line_ind, symb_ind=tk.symb_ind)
+                                param[k] = Token(change_data[tk.text], line_ind=tk.line_ind, symb_ind=tk.symb_ind, filename=token.filename)
         #
         #преобразование арифметических операций
         #
@@ -953,17 +976,16 @@ def compile(filename):
     #
     #ПРОВЕРКА ЧИСЕЛ НА ДОПУСТИМЫЙ ДИАПАЗОН
     #
-    error = 0
     for line in commands:
         for token in line:
             if type(token) != type([]):
                 if token.type == "number" and (eval(token.text) > 255 or eval(token.text) < 0):
-                    console += get_error(14, token.line_ind, token.symb_ind, code, token=token)
+                    console += get_error(14, token.line_ind, token.symb_ind, token.filename, token=token)
                     error = 1
             else:
                 for tk in token:
                     if tk.type == "number" and (eval(tk.text) > 255 or eval(tk.text) < 0):
-                        console += get_error(14, tk.line_ind, tk.symb_ind, code, token=token)
+                        console += get_error(14, tk.line_ind, tk.symb_ind, tk.filaname, token=token)
                         error = 1
     if error:
         return([], console, 1)
@@ -1001,7 +1023,7 @@ def compile(filename):
                 la = addr
                 out[addr] = int(number.text, base=0)
                 if addr // 128 != (addr + 1) // 128 and n != len(line[2]) - 1:
-                    console += get_error(21, number.line_ind, number.symb_ind, code, addr//128)
+                    console += get_error(21, number.line_ind, number.symb_ind, number.filaname, addr // 128)
                     return([], console, 1)
                 addr += 1
                 code_length += 1

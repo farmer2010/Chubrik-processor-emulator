@@ -1,7 +1,7 @@
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
 ;W                       ОБЩАЯ ОБЛАСТЬ                         W
 ;WWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWWW
-.include "test2.asm"
+.include "test23.asm"
 
 ff equ 32
 
