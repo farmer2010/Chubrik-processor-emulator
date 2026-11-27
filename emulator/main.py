@@ -160,7 +160,7 @@ while keep_going:
                 emu.toggle_keys = not emu.toggle_keys
             if mods & pygame.KMOD_CTRL:
                 if event.key == pygame.K_o:
-                    name = crossfiledialog.open_file(start_dir=os.path.abspath("files/programs/"), filter=["*.asm", "*.txt"])
+                    name = crossfiledialog.open_file(filter=["*.asm", "*.txt"])
                     if name != None:
                         if change_console:
                             change_console = 0
@@ -184,7 +184,7 @@ while keep_going:
             if event.button == 1:
                 if mousepos[1] < 30:
                     if mousepos[0] < open_button_pos:
-                        name = crossfiledialog.open_file(start_dir=os.path.abspath("files/programs/"), filter=["*.asm", "*.txt"])
+                        name = crossfiledialog.open_file(filter=["*.asm", "*.txt"])
                         if name != None:
                             if change_console:
                                 change_console = 0

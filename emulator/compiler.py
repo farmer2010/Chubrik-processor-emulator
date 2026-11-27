@@ -921,7 +921,7 @@ def compile(filename):
                         for k in range(len(param)):
                             tk = param[k]
                             if tk.text in change_data:
-                                param[k] = Token(change_data[tk.text], line_ind=tk.line_ind, symb_ind=tk.symb_ind, filename=token.filename)
+                                param[k] = Token(change_data[tk.text], line_ind=tk.line_ind, symb_ind=tk.symb_ind, filename=tk.filename)
         #
         #преобразование арифметических операций
         #

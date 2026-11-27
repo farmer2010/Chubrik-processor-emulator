@@ -153,7 +153,6 @@ class Emulator():
                 #
                 res = compile(self.filename)
                 code = res[0]
-                #self.compilation_console = f'File "{self.filename}":\n' + res[1]
                 self.compilation_console = res[1]
                 if res[2]:
                     self.compilation_error = 1
