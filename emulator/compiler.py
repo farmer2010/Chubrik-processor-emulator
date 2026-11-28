@@ -1014,6 +1014,17 @@ def compile(filename):
     if error:
         return([], console, 1)
     #
+    #.set_speed, .set_terminal_w, .set_terminal_h
+    #
+    emu_param = {"speed" : -1, "terminal_w" : -1, "terminal_h" : -1}
+    for line in commands:
+        if line[0] == ".set_speed":
+            emu_param["speed"] = int(line[1].text)
+        elif line[0] == ".set_terminal_w":
+            emu_param["terminal_w"] = int(line[1].text)
+        elif line[0] == ".set_terminal_h":
+            emu_param["terminal_h"] = int(line[1].text)
+    #
     #УБИРАЕМ ЛИШНИЕ КОМАНДЫ
     #
     coms = []
@@ -1227,7 +1238,7 @@ def compile(filename):
     console += "\n"
     console += "File succesfully compilated\n"
     console += f"Code length: {code_length} bytes"
-    return(out, console, 0)
+    return(out, console, 0, emu_param)
 
 if __name__ == "__main__":
     res = compile("D:/projects/chuemu/emulator/files/programs/farmer_2010/test.asm")

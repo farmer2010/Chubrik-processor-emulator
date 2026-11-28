@@ -156,10 +156,18 @@ class Emulator():
                 self.compilation_console = res[1]
                 if res[2]:
                     self.compilation_error = 1
-                for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
-                    self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
-                    if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
-                        self.update_ports(i, code[i])
+                else:
+                    param = res[3]
+                    if param["speed"] != -1:
+                        self.speed = param["speed"]
+                    w = self.console_w if param["terminal_w"] == -1 else param["terminal_w"]
+                    h = self.console_h if param["terminal_h"] == -1 else param["terminal_h"]
+                    if w != self.console_w and h != self.console_h:
+                        self.change_console_scale(w, h)
+                    for i in range(len(code)):  #во время загрузки программы можно переключать режим работы дисплея,
+                        self.memory[i] = code[i]#писать данные на дисплей, но нельзя переключать банки памяти
+                        if i >= 0x3A and i <= 0x7F and i != 0x3D and i != 0x3C:
+                            self.update_ports(i, code[i])
 
     def change_console_scale(self, w, h):
         if w != 0 and h != 0:
@@ -169,6 +177,7 @@ class Emulator():
             dh = H - 30 - 100
             self.console_scale = max(int(min(dw / (self.console_w * 6), dh / (self.console_h * 8))), 1)
             self.font = [get_symbol(i, scale=self.console_scale) for i in range(256)]#шрифт для консоли
+            self.console = [[self.font[0] for x in range(self.console_w)] for y in range(self.console_h)]#консоль
             self.invalid_console_scale = 0
         else:
             self.invalid_console_scale = 1
