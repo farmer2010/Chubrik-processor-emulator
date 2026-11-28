@@ -113,6 +113,7 @@ while keep_going:
     mods = pygame.key.get_mods()
     events = pygame.event.get()
     keys = pygame.key.get_pressed()
+    mousepos = pygame.mouse.get_pos()
     for event in events:
         if event.type == pygame.QUIT:
             keep_going = 0
@@ -180,7 +181,6 @@ while keep_going:
         if event.type == pygame.MOUSEWHEEL and menu == "console":
             console_scroll = max(console_scroll - event.y * 2, 0)
         if event.type == pygame.MOUSEBUTTONDOWN:
-            mousepos = pygame.mouse.get_pos()
             if event.button == 1:
                 if mousepos[1] < 30:
                     if mousepos[0] < open_button_pos:
@@ -256,13 +256,6 @@ while keep_going:
                         if mousepos[0] > 0 and mousepos[0] < 25 and mousepos[1] > 80 and mousepos[1] < 105:
                             mouse_connect = 0
                             draw_panel = 1
-                elif menu == "console":
-                    if mousepos[1] > 30 and mousepos[0] > W - 20:
-                        lenlines = len(emu.compilation_console.split("\n"))
-                        if lenlines > (H - 40) // 20:
-                            h = min(1, (H - 40) // 20 / lenlines) * (H - 30)
-                            m_y = (mousepos[1] - 30 - h/2) / (H - 30 - h)
-                            console_scroll = max(0, int(lenlines * m_y))
                 elif menu == "memory":#(W / 2 + 10, H - 90), (W / 2 - 90, H - 90) 80*80
                     if mousepos[1] > H - 90 and mousepos[1] < H - 10 and mousepos[0] > W / 2 - 90 and mousepos[0] < W / 2 + 90:
                         if mousepos[0] < W / 2 - 10:#left button
@@ -271,6 +264,13 @@ while keep_going:
                         elif mousepos[0] > W / 2 + 10:
                             if page < 15:
                                 page += 1
+    if pygame.mouse.get_pressed()[0] and menu == "console":
+        if mousepos[1] > 30 and mousepos[0] > W - 20:
+            lenlines = len(emu.compilation_console.split("\n"))
+            if lenlines > (H - 40) // 20:
+                h = min(1, (H - 40) // 20 / lenlines) * (H - 30)
+                m_y = (mousepos[1] - 30 - h / 2) / (H - 30 - h)
+                console_scroll = max(0, int(lenlines * m_y))
     #
     #ОБНОВЛЕНИЕ
     #

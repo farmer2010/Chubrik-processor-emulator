@@ -363,7 +363,7 @@ def get_error(err_code, line_ind, pos, filename, token=Token(" ")):
     elif err_code == 20:
         res += f"Memory overflow: bank {token} > 255"
     elif err_code == 21:
-        res += f"Data overflow foiom bank {token} to next bank"
+        res += f"Data overflow from bank {token} to next bank"
     elif err_code == 22:
         res += f"File \"{token}\" was included earlier\n"
     elif err_code == 23:
