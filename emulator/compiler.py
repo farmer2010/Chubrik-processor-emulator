@@ -3,7 +3,8 @@ from pathlib import Path
 
 spaces = [" ", "\n", "\t", chr(65279)]
 symb = [",", ":", "-", "+", "$", "@"]
-words = ["db", "equ", ".bank", ".include"]
+words = ["db", "equ"]
+directives = [".bank", ".include", ".set_speed", ".set_terminal_w", ".set_terminal_h"]
 all_commands = ["nop", "hlt", "ssp", "ld", "ldi", "st", "jmp", "jz", "js", "jc", "jo", "jnz", "jns", "jnc", "jno", "clr", "mov", "and", "or", "xor", "add", "adc", "sub", "sbb", "cmp", "test", "inc", "dec", "not", "neg", "rnd", "shl", "shr", "sar", "rcl", "rcr"]
 cmd1 = {"inc" : 0x60, "dec" : 0x70, "not" : 0x80, "neg" : 0x90, "clr" : 0xA0, "test" : 0xB0, "rcl" : 0xC0, "rcr" : 0xD0}
 cmd2 = {"add" : 0x60, "sub" : 0x70, "adc" : 0x80, "sbb" : 0x90, "mov" : 0xA0, "and" : 0xB0, "or" : 0xC0, "xor" : 0xD0, "cmp" : 0xF0}
@@ -211,6 +212,8 @@ class Token():
             self.type = "special symbol"
         elif txt in words:
             self.type = "word"
+        elif txt in directives:
+            self.type = "directive"
         elif txt[0] == "'" or txt[0] == '"':
             self.type = "string"
         elif txt in all_commands:
@@ -355,7 +358,7 @@ def get_error(err_code, line_ind, pos, filename, token=Token(" ")):
     elif err_code == 16:
         res += f"Invalid comma placement"
     elif err_code == 17:
-        res += f"Directive .bank requires a number, not {token}"
+        res += f"Parameter must be a {token}"
     elif err_code == 18:
         res += f"Number must be between 1 and 255, not {token}"
     elif err_code == 19:
@@ -368,8 +371,6 @@ def get_error(err_code, line_ind, pos, filename, token=Token(" ")):
         res += f"File \"{token}\" was included earlier\n"
     elif err_code == 23:
         res += f"File \"{token}\" not found"
-    elif err_code == 24:
-        res += "Parameter must be a string"
     res += "\n\n"
     return(res)
 
@@ -495,7 +496,6 @@ def tokenise(filename, files):
     #ПРОВЕРКА СИНТАКСИСА
     #
     error = 0
-    print(lines_level1)
     for token in lines_level1:
         if token.type == "number":
             #invalid number format
@@ -530,7 +530,7 @@ def tokenise(filename, files):
             continue
         #параметр - не строка
         if command[0] == ".include" and command[1].type != "string":
-            console += get_error(24, command[1].line_ind, command[1].symb_ind, command[1].filename)
+            console += get_error(17, command[1].line_ind, command[1].symb_ind, command[1].filename, token="string")
             error = 1
             continue
     if error:
@@ -603,7 +603,7 @@ def compile(filename):
         cont = 0
         command = commands[i]
         #неизвестная команда
-        if command[0] != ".bank" and command[0] != ".include" and (
+        if command[0].type != "directive" and (
                 command[0].type == "unknown" and
                 ((len(command) >= 2 and command[1] != ":" and command[1] != "equ" and command[1] != "db") or (len(command) == 1)) or
                 (command[0].type != "command" and command[0].type != "unknown")
@@ -631,19 +631,18 @@ def compile(filename):
             console += get_error(2, command[0].line_ind, command[0].symb_ind, command[0].filename, token=command[0])
             error = 1
             continue
-        #.bank incorrect token
-        if command[0] == ".bank" and (len(command) > 1 and command[1].type != "number"):
-            console += get_error(17, command[1].line_ind, command[1].symb_ind, command[0].filename, token=command[1])
+        #directive incorrect token
+        if (command[0].type == "directive" and command[0] != ".include") and (len(command) > 1 and command[1].type != "number"):
+            console += get_error(17, command[1].line_ind, command[1].symb_ind, command[0].filename, token="number")
             error = 1
             continue
         #.bank number < 1 or > 255
-        if command[0] == ".bank" and len(command) == 2 and (
-                int(command[1].text, base=0) <= 0 or int(command[1].text, base=0) > 255):
+        if command[0] == ".bank" and len(command) == 2 and (int(command[1].text, base=0) <= 0 or int(command[1].text, base=0) > 255):
             console += get_error(18, command[1].line_ind, command[1].symb_ind, command[1].filename, token=command[1])
             error = 1
             continue
-        #.bank incorrect number of params
-        if command[0] == ".bank" and len(command) > 2:
+        #directive incorrect number of params
+        if command[0].type == "directive" and len(command) > 2:
             console += get_error(5, command[2].line_ind, command[2].symb_ind, command[2].filename)
             error = 1
             continue
@@ -653,8 +652,7 @@ def compile(filename):
             buffer = []
             p_ind = 0
             if len(command) == 1 and command_notation[command[0].text]["params_count"] > 0:
-                console += get_error(5, command[0].line_ind, command[0].symb_ind + len(command[0].text),
-                                     command[0].filename)
+                console += get_error(5, command[0].line_ind, command[0].symb_ind + len(command[0].text), command[0].filename)
                 error = 1
                 break
             for j in range(1, len(command)):
@@ -712,8 +710,7 @@ def compile(filename):
                     command_notation[command[0].text]["params"][1] == "r" and \
                     command_notation[command[0].text]["block_double_reg"] and \
                     param[0][0].text == param[1][0].text:
-                console += get_error(0, command[0].line_ind, command[0].symb_ind, command[0].filename,
-                                     token=f"{command[0].text} {command[1].text}, {command[3].text}")
+                console += get_error(0, command[0].line_ind, command[0].symb_ind, command[0].filename, token=f"{command[0].text} {command[1].text}, {command[3].text}")
                 error = 1
                 continue
         #equ params
@@ -993,21 +990,27 @@ def compile(filename):
         for i in range(len(line)):
             token = line[i]
             if type(token) != type([]) and token.type == "number":
-                line[i] = Token(str(eval(token.text)), line_ind=token.line_ind, symb_ind=token.symb_ind)
+                line[i] = Token(str(int(token.text, 0)), line_ind=token.line_ind, symb_ind=token.symb_ind, filename=token.filename)
     #
     #ПРОВЕРКА ЧИСЕЛ НА ДОПУСТИМЫЙ ДИАПАЗОН
     #
     for line in commands:
-        for token in line:
-            if type(token) != type([]):
-                if token.type == "number" and (eval(token.text) > 255 or eval(token.text) < 0):
-                    console += get_error(14, token.line_ind, token.symb_ind, token.filename, token=token)
-                    error = 1
-            else:
-                for tk in token:
-                    if tk.type == "number" and (eval(tk.text) > 255 or eval(tk.text) < 0):
-                        console += get_error(14, tk.line_ind, tk.symb_ind, tk.filaname, token=token)
-                        error = 1
+        if line[0] != ".set_speed":
+            for token in line:
+                if type(token) != type([]):
+                    if line[0] != ".set_terminal_w" and line[0] != ".set_terminal_h":
+                        if token.type == "number" and (int(token.text, 0) > 255 or int(token.text, 0) < 0):
+                            console += get_error(14, token.line_ind, token.symb_ind, token.filename, token=token)
+                            error = 1
+                    else:
+                        if token.type == "number" and (int(token.text, 0) > 255 or int(token.text, 0) < 1):
+                            console += get_error(18, token.line_ind, token.symb_ind, token.filename, token=token)
+                            error = 1
+                else:
+                    for tk in token:
+                        if tk.type == "number" and (int(tk.text, 0) > 255 or int(tk.text, 0) < 0):
+                            console += get_error(14, tk.line_ind, tk.symb_ind, tk.filaname, token=token)
+                            error = 1
     if error:
         return([], console, 1)
     #
@@ -1015,7 +1018,7 @@ def compile(filename):
     #
     coms = []
     for command in commands:
-        if not(len(command) > 1 and (command[1] == "equ" or command[1] == ":")):
+        if not((len(command) > 1 and (command[1] == "equ" or command[1] == ":")) or (command in directives and command != ".bank")):
             coms.append(command)
     #
     #ФИНАЛЬНОЕ ПРЕОБРАЗОВАНИЕ В БАЙТ - КОД
