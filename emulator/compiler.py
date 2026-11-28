@@ -306,7 +306,7 @@ def test_param(param, target_param_types, code, labels, max_string_len=1):
     return("", 0)
 
 def get_error(err_code, line_ind, pos, filename, token=Token(" ")):
-    file = open(filename, "r")
+    file = open(filename, "r", encoding="utf-8")
     code = file.read()
     file.close()
     #
@@ -368,6 +368,8 @@ def get_error(err_code, line_ind, pos, filename, token=Token(" ")):
         res += f"File \"{token}\" was included earlier\n"
     elif err_code == 23:
         res += f"File \"{token}\" not found"
+    elif err_code == 24:
+        res += "Parameter must be a string"
     res += "\n\n"
     return(res)
 
@@ -493,11 +495,12 @@ def tokenise(filename, files):
     #ПРОВЕРКА СИНТАКСИСА
     #
     error = 0
+    print(lines_level1)
     for token in lines_level1:
         if token.type == "number":
             #invalid number format
             try:
-                eval(token.text)
+                int(token.text, 0)
             except:
                 console += get_error(13, token.line_ind, token.symb_ind, token.filename)
                 error = 1
@@ -513,6 +516,25 @@ def tokenise(filename, files):
                 console += get_error(10, token.line_ind, token.symb_ind, token.filename)
                 error = 1
                 continue
+    #
+    for i in range(len(lines_level2)):
+        command = lines_level2[i]
+        #неверное количество параметров
+        if command[0] == ".include" and len(command) > 2:
+            console += get_error(5, command[2].line_ind, command[2].symb_ind, command[2].filename)
+            error = 1
+            continue
+        if command[0] == ".include" and len(command) == 1:
+            console += get_error(4, command[0].line_ind, command[0].symb_ind + len(command[0].text), command[0].filename)
+            error = 1
+            continue
+        #параметр - не строка
+        if command[0] == ".include" and command[1].type != "string":
+            console += get_error(24, command[1].line_ind, command[1].symb_ind, command[1].filename)
+            error = 1
+            continue
+    if error:
+        return([], console, 1)
     #
     #.include
     #
@@ -537,7 +559,7 @@ def tokenise(filename, files):
             else:
                 console += get_error(22, line[1].line_ind, line[1].symb_ind, line[1].filename, token=line[1].text[1:-1])
                 return([], console, 1)
-    return(out, console, error)
+    return(out, console, 0)
 
 
 
@@ -600,8 +622,7 @@ def compile(filename):
             error = 1
             continue
         #incorrect label name
-        if len(command) == 2 and (command[1] == ":" or command[1] == "equ" or command[1] == "db") and command[
-            0].type != "unknown":
+        if len(command) == 2 and (command[1] == ":" or command[1] == "equ" or command[1] == "db") and command[0].type != "unknown":
             console += get_error(1, command[0].line_ind, command[0].symb_ind, command[0].filename, token=command[0])
             error = 1
             continue
